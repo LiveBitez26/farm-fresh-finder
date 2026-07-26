@@ -231,14 +231,14 @@ function MarketDetail({
 
   return (
     <div className="animate-in fade-in slide-in-from-right-2 duration-300">
-      <div className="relative h-[300px] overflow-hidden rounded-b-[36px]">
+      <div className="relative h-[300px] overflow-hidden rounded-b-[36px] md:h-[420px] md:rounded-[32px]">
         <img
           src={IMG.marketDowntown}
           alt="Downtown Farmers Market"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
-        <div className="relative flex items-center justify-between p-5">
+        <div className="relative flex items-center justify-between p-5 md:p-8">
           <button
             onClick={onBack}
             className="grid h-11 w-11 place-items-center rounded-full bg-white/90 backdrop-blur text-foreground shadow"
@@ -247,37 +247,37 @@ function MarketDetail({
           </button>
           <CartBtn count={cart} />
         </div>
-        <div className="absolute right-5 bottom-5 left-5 text-white">
+        <div className="absolute right-5 bottom-5 left-5 text-white md:right-10 md:bottom-10 md:left-10">
           <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-[11px] font-medium backdrop-blur">
             Open now
           </span>
-          <h1 className="mt-2 font-display text-[28px] leading-tight font-semibold">
+          <h1 className="mt-2 font-display text-[28px] leading-tight font-semibold md:text-5xl">
             Downtown Farmers Market
           </h1>
         </div>
       </div>
 
-      <div className="px-5 pt-5">
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <div className="px-5 pt-5 md:px-0 md:pt-8">
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm md:p-5">
           <div className="flex items-start gap-3">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground">
               <MapPin className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold">123 Main St, Anytown</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm font-semibold md:text-base">123 Main St, Anytown</p>
+              <p className="text-xs text-muted-foreground md:text-sm">
                 Open Tue–Sat • 8:00AM – 2:00PM
               </p>
             </div>
             <div className="ml-auto flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
               <Users className="h-3.5 w-3.5" />
-              14
+              14 farmers
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="no-scrollbar mt-5 -mx-5 flex gap-2 overflow-x-auto px-5">
+        <div className="no-scrollbar mt-5 -mx-5 flex gap-2 overflow-x-auto px-5 md:mx-0 md:mt-8 md:px-0 md:overflow-visible md:flex-wrap">
           {categories.map((c) => (
             <button
               key={c}
@@ -293,11 +293,11 @@ function MarketDetail({
           ))}
         </div>
 
-        <h2 className="mt-6 font-display text-xl font-semibold">
+        <h2 className="mt-6 font-display text-xl font-semibold md:mt-10 md:text-3xl">
           Meet the Farmers at This Market
         </h2>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-2 gap-3 md:mt-6 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
           <FarmerCard
             name="Green Fields Farm"
             image={IMG.farmerMale}
