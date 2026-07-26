@@ -10,33 +10,178 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as OrganizerIndexRouteImport } from './routes/organizer/index'
+import { Route as OrganizerLayoutRouteImport } from './routes/organizer/_layout'
+import { Route as OrganizerAnalyticsRouteImport } from './routes/organizer/analytics'
+import { Route as OrganizerCommunicationsRouteImport } from './routes/organizer/communications'
+import { Route as OrganizerComplianceRouteImport } from './routes/organizer/compliance'
+import { Route as OrganizerOrdersRouteImport } from './routes/organizer/orders'
+import { Route as OrganizerPaymentsRouteImport } from './routes/organizer/payments'
+import { Route as OrganizerScheduleRouteImport } from './routes/organizer/schedule'
+import { Route as OrganizerSettingsRouteImport } from './routes/organizer/settings'
+import { Route as OrganizerVendorsRouteImport } from './routes/organizer/vendors'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
+  id: '/organizer/',
+  path: '/organizer/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerLayoutRoute = OrganizerLayoutRouteImport.update({
+  id: '/organizer/_layout',
+  path: '/organizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerAnalyticsRoute = OrganizerAnalyticsRouteImport.update({
+  id: '/organizer/analytics',
+  path: '/organizer/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerCommunicationsRoute = OrganizerCommunicationsRouteImport.update({
+  id: '/organizer/communications',
+  path: '/organizer/communications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerComplianceRoute = OrganizerComplianceRouteImport.update({
+  id: '/organizer/compliance',
+  path: '/organizer/compliance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerOrdersRoute = OrganizerOrdersRouteImport.update({
+  id: '/organizer/orders',
+  path: '/organizer/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerPaymentsRoute = OrganizerPaymentsRouteImport.update({
+  id: '/organizer/payments',
+  path: '/organizer/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerScheduleRoute = OrganizerScheduleRouteImport.update({
+  id: '/organizer/schedule',
+  path: '/organizer/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerSettingsRoute = OrganizerSettingsRouteImport.update({
+  id: '/organizer/settings',
+  path: '/organizer/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerVendorsRoute = OrganizerVendorsRouteImport.update({
+  id: '/organizer/vendors',
+  path: '/organizer/vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/organizer': typeof OrganizerLayoutRoute
+  '/organizer/analytics': typeof OrganizerAnalyticsRoute
+  '/organizer/communications': typeof OrganizerCommunicationsRoute
+  '/organizer/compliance': typeof OrganizerComplianceRoute
+  '/organizer/orders': typeof OrganizerOrdersRoute
+  '/organizer/payments': typeof OrganizerPaymentsRoute
+  '/organizer/schedule': typeof OrganizerScheduleRoute
+  '/organizer/settings': typeof OrganizerSettingsRoute
+  '/organizer/vendors': typeof OrganizerVendorsRoute
+  '/organizer/': typeof OrganizerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/organizer': typeof OrganizerIndexRoute
+  '/organizer/analytics': typeof OrganizerAnalyticsRoute
+  '/organizer/communications': typeof OrganizerCommunicationsRoute
+  '/organizer/compliance': typeof OrganizerComplianceRoute
+  '/organizer/orders': typeof OrganizerOrdersRoute
+  '/organizer/payments': typeof OrganizerPaymentsRoute
+  '/organizer/schedule': typeof OrganizerScheduleRoute
+  '/organizer/settings': typeof OrganizerSettingsRoute
+  '/organizer/vendors': typeof OrganizerVendorsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/organizer/_layout': typeof OrganizerLayoutRoute
+  '/organizer/analytics': typeof OrganizerAnalyticsRoute
+  '/organizer/communications': typeof OrganizerCommunicationsRoute
+  '/organizer/compliance': typeof OrganizerComplianceRoute
+  '/organizer/orders': typeof OrganizerOrdersRoute
+  '/organizer/payments': typeof OrganizerPaymentsRoute
+  '/organizer/schedule': typeof OrganizerScheduleRoute
+  '/organizer/settings': typeof OrganizerSettingsRoute
+  '/organizer/vendors': typeof OrganizerVendorsRoute
+  '/organizer/': typeof OrganizerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/organizer'
+    | '/organizer/analytics'
+    | '/organizer/communications'
+    | '/organizer/compliance'
+    | '/organizer/orders'
+    | '/organizer/payments'
+    | '/organizer/schedule'
+    | '/organizer/settings'
+    | '/organizer/vendors'
+    | '/organizer/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/organizer'
+    | '/organizer/analytics'
+    | '/organizer/communications'
+    | '/organizer/compliance'
+    | '/organizer/orders'
+    | '/organizer/payments'
+    | '/organizer/schedule'
+    | '/organizer/settings'
+    | '/organizer/vendors'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/organizer/_layout'
+    | '/organizer/analytics'
+    | '/organizer/communications'
+    | '/organizer/compliance'
+    | '/organizer/orders'
+    | '/organizer/payments'
+    | '/organizer/schedule'
+    | '/organizer/settings'
+    | '/organizer/vendors'
+    | '/organizer/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  OrganizerLayoutRoute: typeof OrganizerLayoutRoute
+  OrganizerAnalyticsRoute: typeof OrganizerAnalyticsRoute
+  OrganizerCommunicationsRoute: typeof OrganizerCommunicationsRoute
+  OrganizerComplianceRoute: typeof OrganizerComplianceRoute
+  OrganizerOrdersRoute: typeof OrganizerOrdersRoute
+  OrganizerPaymentsRoute: typeof OrganizerPaymentsRoute
+  OrganizerScheduleRoute: typeof OrganizerScheduleRoute
+  OrganizerSettingsRoute: typeof OrganizerSettingsRoute
+  OrganizerVendorsRoute: typeof OrganizerVendorsRoute
+  OrganizerIndexRoute: typeof OrganizerIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,12 +193,110 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/': {
+      id: '/organizer/'
+      path: '/organizer'
+      fullPath: '/organizer/'
+      preLoaderRoute: typeof OrganizerIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/_layout': {
+      id: '/organizer/_layout'
+      path: '/organizer'
+      fullPath: '/organizer'
+      preLoaderRoute: typeof OrganizerLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/analytics': {
+      id: '/organizer/analytics'
+      path: '/organizer/analytics'
+      fullPath: '/organizer/analytics'
+      preLoaderRoute: typeof OrganizerAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/communications': {
+      id: '/organizer/communications'
+      path: '/organizer/communications'
+      fullPath: '/organizer/communications'
+      preLoaderRoute: typeof OrganizerCommunicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/compliance': {
+      id: '/organizer/compliance'
+      path: '/organizer/compliance'
+      fullPath: '/organizer/compliance'
+      preLoaderRoute: typeof OrganizerComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/orders': {
+      id: '/organizer/orders'
+      path: '/organizer/orders'
+      fullPath: '/organizer/orders'
+      preLoaderRoute: typeof OrganizerOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/payments': {
+      id: '/organizer/payments'
+      path: '/organizer/payments'
+      fullPath: '/organizer/payments'
+      preLoaderRoute: typeof OrganizerPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/schedule': {
+      id: '/organizer/schedule'
+      path: '/organizer/schedule'
+      fullPath: '/organizer/schedule'
+      preLoaderRoute: typeof OrganizerScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/settings': {
+      id: '/organizer/settings'
+      path: '/organizer/settings'
+      fullPath: '/organizer/settings'
+      preLoaderRoute: typeof OrganizerSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer/vendors': {
+      id: '/organizer/vendors'
+      path: '/organizer/vendors'
+      fullPath: '/organizer/vendors'
+      preLoaderRoute: typeof OrganizerVendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  OrganizerLayoutRoute: OrganizerLayoutRoute,
+  OrganizerAnalyticsRoute: OrganizerAnalyticsRoute,
+  OrganizerCommunicationsRoute: OrganizerCommunicationsRoute,
+  OrganizerComplianceRoute: OrganizerComplianceRoute,
+  OrganizerOrdersRoute: OrganizerOrdersRoute,
+  OrganizerPaymentsRoute: OrganizerPaymentsRoute,
+  OrganizerScheduleRoute: OrganizerScheduleRoute,
+  OrganizerSettingsRoute: OrganizerSettingsRoute,
+  OrganizerVendorsRoute: OrganizerVendorsRoute,
+  OrganizerIndexRoute: OrganizerIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
