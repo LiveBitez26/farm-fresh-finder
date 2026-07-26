@@ -478,6 +478,7 @@ function FarmerScreen({
             }
           />
         </div>
+        </div>
       </div>
     </div>
   );
