@@ -89,25 +89,25 @@ function MarketsScreen({ onOpen }: { onOpen: () => void }) {
   return (
     <div className="animate-in fade-in duration-300">
       {/* Hero banner */}
-      <div className="relative h-[340px] overflow-hidden rounded-b-[36px]">
+      <div className="relative h-[340px] overflow-hidden rounded-b-[36px] md:h-[480px] md:rounded-[32px]">
         <img
           src={IMG.heroFood}
           alt="Fresh local produce at a farmers market"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/70" />
-        <div className="relative flex h-full flex-col justify-between p-6 text-white">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/70 md:bg-gradient-to-r md:from-black/70 md:via-black/40 md:to-transparent" />
+        <div className="relative flex h-full flex-col justify-between p-6 text-white md:p-12">
           <div className="flex items-center gap-2 text-sm font-medium">
             <div className="grid h-8 w-8 place-items-center rounded-full bg-white/15 backdrop-blur">
               <Leaf className="h-4 w-4" />
             </div>
             <span className="tracking-wide">Harvest</span>
           </div>
-          <div>
-            <h1 className="font-display text-[30px] leading-[1.05] font-semibold">
+          <div className="md:max-w-xl">
+            <h1 className="font-display text-[30px] leading-[1.05] font-semibold md:text-5xl lg:text-6xl">
               Support Farmers in Your Local Community.
             </h1>
-            <p className="mt-3 text-sm/relaxed text-white/85">
+            <p className="mt-3 text-sm/relaxed text-white/85 md:mt-5 md:text-base">
               Discover farmers markets and shops near you to buy fresh, local
               produce.
             </p>
@@ -115,38 +115,40 @@ function MarketsScreen({ onOpen }: { onOpen: () => void }) {
         </div>
       </div>
 
-      <div className="px-5 pt-6">
-        <button
-          onClick={onOpen}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 text-base font-semibold text-primary-foreground shadow-[0_10px_30px_-10px_var(--color-primary)] transition active:scale-[0.98]"
-        >
-          <MapPin className="h-5 w-5" />
-          Find Farmers Near Me
-        </button>
-
-        {/* Search */}
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
-          <Search className="h-5 w-5 text-muted-foreground" />
-          <input
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-            placeholder="Enter your city or ZIP code"
-          />
-          <button className="rounded-xl bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground">
-            Search
+      <div className="px-5 pt-6 md:px-0 md:pt-10">
+        <div className="md:flex md:items-center md:gap-4">
+          <button
+            onClick={onOpen}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 text-base font-semibold text-primary-foreground shadow-[0_10px_30px_-10px_var(--color-primary)] transition active:scale-[0.98] md:w-auto md:whitespace-nowrap md:px-8"
+          >
+            <MapPin className="h-5 w-5" />
+            Find Farmers Near Me
           </button>
+
+          {/* Search */}
+          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm md:mt-0 md:flex-1 md:py-3.5">
+            <Search className="h-5 w-5 text-muted-foreground" />
+            <input
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              placeholder="Enter your city or ZIP code"
+            />
+            <button className="rounded-xl bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground">
+              Search
+            </button>
+          </div>
         </div>
 
         {/* Section */}
-        <div className="mt-8 mb-3 flex items-end justify-between">
-          <h2 className="font-display text-2xl font-semibold">
+        <div className="mt-8 mb-3 flex items-end justify-between md:mt-14 md:mb-6">
+          <h2 className="font-display text-2xl font-semibold md:text-3xl">
             Nearby Farmers Markets
           </h2>
-          <span className="text-xs font-medium text-muted-foreground">
+          <span className="text-xs font-medium text-muted-foreground md:text-sm">
             See all
           </span>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 lg:grid-cols-3">
           <MarketCard
             title="Downtown Farmers Market"
             image={IMG.marketDowntown}
