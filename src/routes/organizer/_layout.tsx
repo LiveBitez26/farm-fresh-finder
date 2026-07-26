@@ -10,12 +10,16 @@ export const Route = createFileRoute("/organizer/_layout")({
 });
 
 function OrganizerLayout() {
-  const { user, isLoading } = useAuth();
+  const { user, profile, isLoading, isProfileLoading } = useAuth();
 
   // While Supabase isn't wired up yet, let the console render in "preview
   // mode" with mock data rather than blocking on a real session.
   if (isSupabaseConfigured && !isLoading && !user) {
     return <Navigate to="/login" />;
+  }
+
+  if (isSupabaseConfigured && user && !isProfileLoading && profile && !profile.organization_id) {
+    return <Navigate to="/onboarding" />;
   }
 
   return (

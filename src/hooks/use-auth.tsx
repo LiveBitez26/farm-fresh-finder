@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import type { OrgRole, Profile } from "../lib/types";
@@ -9,7 +9,10 @@ interface AuthContextValue {
   profile: Profile | null;
   /** Role of the current user within their active organization, if any. */
   role: OrgRole | null;
+  /** True while the initial Supabase session is being restored. */
   isLoading: boolean;
+  /** True while profile/role are being (re)fetched for a signed-in user. */
+  isProfileLoading: boolean;
   signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
   signUpWithPassword: (
     email: string,
@@ -17,6 +20,8 @@ interface AuthContextValue {
     fullName: string,
   ) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  /** Re-fetch profile + role — call after creating an organization in onboarding. */
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -26,10 +31,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<OrgRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
       setIsLoading(false);
+      setIsProfileLoading(false);
       return;
     }
 
@@ -45,44 +52,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  const loadProfileAndRole = useCallback(async (userId: string) => {
+    setIsProfileLoading(true);
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+
+    setProfile((profileData as Profile) ?? null);
+
+    if (profileData) {
+      const { data: memberData } = await supabase
+        .from("organization_members")
+        .select("role")
+        .eq("user_id", userId)
+        .maybeSingle();
+      setRole((memberData?.role as OrgRole) ?? null);
+    } else {
+      setRole(null);
+    }
+    setIsProfileLoading(false);
+  }, []);
+
   useEffect(() => {
     const userId = session?.user?.id;
     if (!userId) {
       setProfile(null);
       setRole(null);
+      setIsProfileLoading(false);
       return;
     }
+    loadProfileAndRole(userId);
+  }, [session?.user, loadProfileAndRole]);
 
-    let cancelled = false;
-
-    async function loadProfileAndRole() {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
-
-      if (cancelled) return;
-      setProfile((profileData as Profile) ?? null);
-
-      if (profileData) {
-        const { data: memberData } = await supabase
-          .from("organization_members")
-          .select("role")
-          .eq("user_id", userId)
-          .maybeSingle();
-
-        if (!cancelled) {
-          setRole((memberData?.role as OrgRole) ?? null);
-        }
-      }
+  const refreshProfile = useCallback(async () => {
+    if (session?.user?.id) {
+      await loadProfileAndRole(session.user.id);
     }
-
-    loadProfileAndRole();
-    return () => {
-      cancelled = true;
-    };
-  }, [session?.user]);
+  }, [session?.user, loadProfileAndRole]);
 
   const signInWithPassword: AuthContextValue["signInWithPassword"] = async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -114,9 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         role,
         isLoading,
+        isProfileLoading,
         signInWithPassword,
         signUpWithPassword,
         signOut,
+        refreshProfile,
       }}
     >
       {children}
