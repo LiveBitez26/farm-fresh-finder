@@ -372,14 +372,14 @@ function FarmerScreen({
   const [freq, setFreq] = useState<"Weekly" | "Bi-weekly">("Weekly");
   return (
     <div className="animate-in fade-in slide-in-from-right-2 duration-300">
-      <div className="relative h-[320px] overflow-hidden rounded-b-[36px]">
+      <div className="relative h-[320px] overflow-hidden rounded-b-[36px] md:h-[460px] md:rounded-[32px]">
         <img
           src={IMG.farmerMale}
           alt="Green Fields Farm"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/70" />
-        <div className="relative flex items-center justify-between p-5">
+        <div className="relative flex items-center justify-between p-5 md:p-8">
           <button
             onClick={onBack}
             className="grid h-11 w-11 place-items-center rounded-full bg-white/90 backdrop-blur text-foreground shadow"
@@ -388,16 +388,17 @@ function FarmerScreen({
           </button>
           <CartBtn count={cart} />
         </div>
-        <div className="absolute right-5 bottom-5 left-5 text-white">
+        <div className="absolute right-5 bottom-5 left-5 text-white md:right-10 md:bottom-10 md:left-10">
           <span className="inline-flex items-center gap-1 rounded-full bg-accent/90 px-3 py-1 text-[11px] font-semibold">
             <Sparkles className="h-3 w-3" /> Verified Grower
           </span>
         </div>
       </div>
 
-      <div className="px-5 pt-5">
-        <h1 className="font-display text-2xl font-semibold">Green Fields Farm</h1>
-        <p className="mt-2 text-sm/relaxed text-muted-foreground">
+      <div className="px-5 pt-5 md:grid md:grid-cols-[1fr_1.4fr] md:gap-10 md:px-0 md:pt-8">
+        <div>
+        <h1 className="font-display text-2xl font-semibold md:text-4xl">Green Fields Farm</h1>
+        <p className="mt-2 text-sm/relaxed text-muted-foreground md:mt-4 md:text-base">
           A family-owned farm growing fresh, organic produce in the heart of the
           valley. We pride ourselves on sustainable farm-practices.
         </p>
@@ -435,12 +436,14 @@ function FarmerScreen({
           </span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </a>
+        </div>
 
-        <h2 className="mt-7 font-display text-lg font-semibold">
+        <div>
+        <h2 className="mt-7 font-display text-lg font-semibold md:mt-0 md:text-2xl">
           Subscribe &amp; Save <span className="text-muted-foreground text-sm font-normal">(From This Farmer)</span>
         </h2>
 
-        <div className="no-scrollbar -mx-5 mt-3 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2">
+        <div className="no-scrollbar -mx-5 mt-3 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:mt-5 md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:px-0">
           <ProductCard
             image={IMG.veggieBox}
             title="Weekly Veggie Box"
