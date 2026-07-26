@@ -51,7 +51,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-[440px] pb-24">
+      <div className="mx-auto w-full max-w-[440px] pb-28 md:max-w-6xl md:pb-16 md:pt-6 md:px-6">
         {tab === "markets" && screen === "markets" && (
           <MarketsScreen onOpen={() => setScreen("market-detail")} />
         )}
