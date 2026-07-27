@@ -47,27 +47,9 @@ function OnboardingPage() {
       return;
     }
 
-    const { error: memberError } = await supabase
-      .from("organization_members")
-      .insert({ organization_id: org.id, user_id: user.id, role: "org_owner" });
-
-    if (memberError) {
-      setError(memberError.message);
-      setSubmitting(false);
-      return;
-    }
-
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({ organization_id: org.id })
-      .eq("id", user.id);
-
-    if (profileError) {
-      setError(profileError.message);
-      setSubmitting(false);
-      return;
-    }
-
+    // A database trigger (on_organization_created) automatically adds the
+    // current user as org_owner and links their profile to this org, all
+    // within the same INSERT — no follow-up requests needed here.
     await refreshProfile();
     setSubmitting(false);
     navigate({ to: "/organizer" });
