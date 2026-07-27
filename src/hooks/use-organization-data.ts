@@ -5,6 +5,7 @@ import type {
   ComplianceDocument,
   DocumentStatus,
   DocumentType,
+  Organization,
   Vendor,
   VendorApplication,
   VendorApplicationStatus,
@@ -71,6 +72,106 @@ export function useComplianceDocuments() {
       return ((data as DocumentJoinRow[]) ?? []).map((row) => ({
         ...row,
         vendor_name: row.vendors?.business_name ?? "Unknown vendor",
+      }));
+    },
+  });
+}
+
+export function useOrganization() {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["organization", organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: async (): Promise<Organization | null> => {
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("id", organizationId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as Organization) ?? null;
+    },
+  });
+}
+
+/** Small counts shown as sidebar nav badges. */
+export function useNavBadgeCounts() {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["nav_badge_counts", organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const [applications, documents] = await Promise.all([
+        supabase
+          .from("vendor_applications")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", organizationId)
+          .not("status", "in", "(activated,rejected)"),
+        supabase
+          .from("documents")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", organizationId)
+          .in("status", ["pending_review", "expiring_soon", "expired", "update_requested"]),
+      ]);
+      return { vendors: applications.count ?? 0, compliance: documents.count ?? 0 };
+    },
+  });
+}
+
+/** Applications not yet activated/rejected, newest first, for the Overview
+ * "awaiting action" panel — includes the vendor's product categories. */
+export function useVendorApplicationsAwaitingAction(limit = 4) {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["vendor_applications_awaiting_action", organizationId, limit],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_applications")
+        .select("*, vendors(product_categories)")
+        .eq("organization_id", organizationId)
+        .not("status", "in", "(activated,rejected)")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      type Row = VendorApplication & { vendors: { product_categories: string[] | null } | null };
+      return ((data as Row[]) ?? []).map((row) => ({
+        ...row,
+        categories: row.vendors?.product_categories?.join(", ") ?? "—",
+      }));
+    },
+  });
+}
+
+/** Upcoming scheduled market dates with their market name, for the Overview
+ * "upcoming markets" panel. */
+export function useUpcomingSchedules(limit = 3) {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["upcoming_schedules", organizationId, limit],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("schedules")
+        .select("*, markets(name)")
+        .eq("organization_id", organizationId)
+        .gte("event_date", new Date().toISOString().slice(0, 10))
+        .order("event_date", { ascending: true })
+        .limit(limit);
+      if (error) throw error;
+      type Row = {
+        id: string;
+        event_date: string;
+        start_time: string | null;
+        end_time: string | null;
+        markets: { name: string } | null;
+      };
+      return ((data as Row[]) ?? []).map((row) => ({
+        id: row.id,
+        marketName: row.markets?.name ?? "Unnamed market",
+        eventDate: row.event_date,
+        startTime: row.start_time,
+        endTime: row.end_time,
       }));
     },
   });
