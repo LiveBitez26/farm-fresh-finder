@@ -311,6 +311,62 @@ export function useSeedDemoData() {
         await supabase.from("documents").insert(documentRows);
       }
 
+      // Booths for the market's layout.
+      const boothCodes = ["A01", "A02", "A03", "A04", "B01", "B02", "B03", "B04"];
+      const { data: booths, error: boothError } = await supabase
+        .from("booths")
+        .insert(
+          boothCodes.map((code) => ({
+            organization_id: organizationId,
+            market_id: market.id,
+            code,
+          })),
+        )
+        .select();
+      if (boothError) throw boothError;
+
+      // A few upcoming schedule dates for this market.
+      const today = new Date();
+      const nextSaturday = new Date(today);
+      nextSaturday.setDate(today.getDate() + ((6 - today.getDay() + 7) % 7 || 7));
+      const scheduleDates = [0, 7, 14].map((offsetDays) => {
+        const d = new Date(nextSaturday);
+        d.setDate(d.getDate() + offsetDays);
+        return d.toISOString().slice(0, 10);
+      });
+
+      const { data: schedules, error: scheduleError } = await supabase
+        .from("schedules")
+        .insert(
+          scheduleDates.map((event_date) => ({
+            organization_id: organizationId,
+            market_id: market.id,
+            event_date,
+            start_time: "09:00",
+            end_time: "13:00",
+            event_type: "weekly",
+          })),
+        )
+        .select();
+      if (scheduleError) throw scheduleError;
+
+      // Assign active vendors to the first couple of booths for the nearest
+      // schedule date, with realistic attendance statuses.
+      const activeVendors = (vendors ?? []).filter(
+        (v: { status: string }) => v.status === "active",
+      );
+      const firstSchedule = schedules?.[0];
+      if (firstSchedule && booths && activeVendors.length > 0) {
+        const assignmentRows = activeVendors.map((v: { id: string }, i: number) => ({
+          organization_id: organizationId,
+          schedule_id: firstSchedule.id,
+          booth_id: booths[i % booths.length].id,
+          vendor_id: v.id,
+          attendance: i === 0 ? ("attending" as const) : ("attending" as const),
+        }));
+        await supabase.from("booth_assignments").insert(assignmentRows);
+      }
+
       return { market, vendors };
     },
     onSuccess: () => {
@@ -318,6 +374,131 @@ export function useSeedDemoData() {
       queryClient.invalidateQueries({ queryKey: ["vendor_applications"] });
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       queryClient.invalidateQueries({ queryKey: ["overview_metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming_schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["booths"] });
+      queryClient.invalidateQueries({ queryKey: ["booth_assignments"] });
+    },
+  });
+}
+
+/** All schedules for the org (past + upcoming), with market name, for the
+ * Schedule & Booth Map calendar list. */
+export function useSchedules() {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["schedules", organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("schedules")
+        .select("*, markets(name)")
+        .eq("organization_id", organizationId)
+        .order("event_date", { ascending: true });
+      if (error) throw error;
+      type Row = {
+        id: string;
+        market_id: string;
+        event_date: string;
+        start_time: string | null;
+        end_time: string | null;
+        event_type: string | null;
+        markets: { name: string } | null;
+      };
+      return ((data as Row[]) ?? []).map((row) => ({
+        id: row.id,
+        marketId: row.market_id,
+        marketName: row.markets?.name ?? "Unnamed market",
+        eventDate: row.event_date,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        eventType: row.event_type,
+      }));
+    },
+  });
+}
+
+/** Booth layout for a given market. */
+export function useBoothsForMarket(marketId: string | undefined) {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["booths", organizationId, marketId],
+    enabled: Boolean(organizationId && marketId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booths")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .eq("market_id", marketId)
+        .order("code", { ascending: true });
+      if (error) throw error;
+      return (data as { id: string; code: string; market_id: string }[]) ?? [];
+    },
+  });
+}
+
+/** Vendor assignments (+ attendance) for a specific scheduled market day. */
+export function useBoothAssignmentsForSchedule(scheduleId: string | undefined) {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["booth_assignments", organizationId, scheduleId],
+    enabled: Boolean(organizationId && scheduleId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booth_assignments")
+        .select("*, vendors(business_name), booths(code)")
+        .eq("organization_id", organizationId)
+        .eq("schedule_id", scheduleId);
+      if (error) throw error;
+      type Row = {
+        id: string;
+        booth_id: string;
+        vendor_id: string | null;
+        attendance: "attending" | "absent" | "late";
+        vendors: { business_name: string } | null;
+        booths: { code: string } | null;
+      };
+      return ((data as Row[]) ?? []).map((row) => ({
+        id: row.id,
+        boothId: row.booth_id,
+        boothCode: row.booths?.code ?? "",
+        vendorId: row.vendor_id,
+        vendorName: row.vendors?.business_name ?? null,
+        attendance: row.attendance,
+      }));
+    },
+  });
+}
+
+/** Assign (or reassign) a vendor to a booth for a given schedule date. */
+export function useAssignVendorToBooth() {
+  const organizationId = useOrganizationId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      scheduleId,
+      boothId,
+      vendorId,
+    }: {
+      scheduleId: string;
+      boothId: string;
+      vendorId: string;
+    }) => {
+      if (!organizationId) throw new Error("No organization");
+      const { error } = await supabase.from("booth_assignments").upsert(
+        {
+          organization_id: organizationId,
+          schedule_id: scheduleId,
+          booth_id: boothId,
+          vendor_id: vendorId,
+          attendance: "attending",
+        },
+        { onConflict: "schedule_id,booth_id" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booth_assignments"] });
     },
   });
 }
