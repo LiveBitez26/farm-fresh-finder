@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Badge } from "../../components/ui/badge";
+import { Badge } from "../../../components/ui/badge";
 import {
   Table,
   TableBody,
@@ -7,9 +7,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
+} from "../../../components/ui/table";
 
-export const Route = createFileRoute("/organizer/orders")({
+export const Route = createFileRoute("/organizer/_layout/orders")({
   component: OrdersPage,
 });
 

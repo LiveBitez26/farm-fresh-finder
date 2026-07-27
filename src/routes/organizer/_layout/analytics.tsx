@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { TrendingUp } from "lucide-react";
 
-export const Route = createFileRoute("/organizer/analytics")({
+export const Route = createFileRoute("/organizer/_layout/analytics")({
   component: AnalyticsPage,
 });
 

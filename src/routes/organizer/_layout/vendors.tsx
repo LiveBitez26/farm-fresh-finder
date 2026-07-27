@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Search, ChevronRight } from "lucide-react";
-import { Input } from "../../components/ui/input";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Badge } from "../../../components/ui/badge";
+import { Button } from "../../../components/ui/button";
 import {
   Table,
   TableBody,
@@ -11,19 +11,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
+} from "../../../components/ui/table";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
-} from "../../components/ui/sheet";
-import { useAuth } from "../../hooks/use-auth";
-import { useVendorApplications, useVendors } from "../../hooks/use-organization-data";
-import type { Vendor, VendorApplicationStatus } from "../../lib/types";
+} from "../../../components/ui/sheet";
+import { useAuth } from "../../../hooks/use-auth";
+import { useVendorApplications, useVendors } from "../../../hooks/use-organization-data";
+import type { Vendor, VendorApplicationStatus } from "../../../lib/types";
 
-export const Route = createFileRoute("/organizer/vendors")({
+export const Route = createFileRoute("/organizer/_layout/vendors")({
   component: VendorsPage,
 });
 

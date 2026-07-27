@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Textarea } from "../../components/ui/textarea";
-import { Button } from "../../components/ui/button";
+import { Textarea } from "../../../components/ui/textarea";
+import { Button } from "../../../components/ui/button";
 
-export const Route = createFileRoute("/organizer/communications")({
+export const Route = createFileRoute("/organizer/_layout/communications")({
   component: CommunicationsPage,
 });
 

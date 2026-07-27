@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { useOrganization } from "../../hooks/use-organization-data";
-import { useAuth } from "../../hooks/use-auth";
+import { Badge } from "../../../components/ui/badge";
+import { Button } from "../../../components/ui/button";
+import { useOrganization } from "../../../hooks/use-organization-data";
+import { useAuth } from "../../../hooks/use-auth";
 
-export const Route = createFileRoute("/organizer/settings")({
+export const Route = createFileRoute("/organizer/_layout/settings")({
   component: SettingsPage,
 });
 

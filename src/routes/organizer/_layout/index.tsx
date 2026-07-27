@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { FileBarChart, Flag, Mail, X, Sparkles, Loader2 } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
-import { Separator } from "../../components/ui/separator";
-import { TicketCard } from "../../components/organizer/ticket-card";
-import { useAuth } from "../../hooks/use-auth";
+import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
+import { Separator } from "../../../components/ui/separator";
+import { TicketCard } from "../../../components/organizer/ticket-card";
+import { useAuth } from "../../../hooks/use-auth";
 import {
   useComplianceDocuments,
   useOrganization,
@@ -14,10 +14,10 @@ import {
   useSeedDemoData,
   useUpcomingSchedules,
   useVendorApplicationsAwaitingAction,
-} from "../../hooks/use-organization-data";
-import type { VendorApplicationStatus } from "../../lib/types";
+} from "../../../hooks/use-organization-data";
+import type { VendorApplicationStatus } from "../../../lib/types";
 
-export const Route = createFileRoute("/organizer/")({
+export const Route = createFileRoute("/organizer/_layout/")({
   component: OverviewPage,
 });
 

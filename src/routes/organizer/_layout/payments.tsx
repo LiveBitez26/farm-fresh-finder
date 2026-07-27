@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Badge } from "../../components/ui/badge";
+import { Badge } from "../../../components/ui/badge";
 import {
   Table,
   TableBody,
@@ -7,10 +7,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
-import { TicketCard } from "../../components/organizer/ticket-card";
+} from "../../../components/ui/table";
+import { TicketCard } from "../../../components/organizer/ticket-card";
 
-export const Route = createFileRoute("/organizer/payments")({
+export const Route = createFileRoute("/organizer/_layout/payments")({
   component: PaymentsPage,
 });
 
