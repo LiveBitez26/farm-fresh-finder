@@ -1,28 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  Users,
-  CalendarDays,
-  Footprints,
-  DollarSign,
-  FileClock,
-  ShieldAlert,
-  FileBarChart,
-  X,
-  Sparkles,
-  Loader2,
-  Flag,
-  Mail,
-  ArrowRight,
-} from "lucide-react";
-import { Link } from "@tanstack/react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { FileBarChart, Flag, Mail, X, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { Separator } from "../../components/ui/separator";
+import { TicketCard } from "../../components/organizer/ticket-card";
 import { useAuth } from "../../hooks/use-auth";
 import {
+  useComplianceDocuments,
   useOrganization,
   useOverviewMetrics,
   useSeedDemoData,
@@ -35,15 +21,13 @@ export const Route = createFileRoute("/organizer/")({
   component: OverviewPage,
 });
 
-// Fallback shown in preview mode (no Supabase connection) or before an
-// organization has any real data yet.
 const MOCK_METRICS = {
-  activeVendors: 68,
-  upcomingMarkets: 6,
-  customerVisits: 3240,
-  revenue: 41280,
-  pendingApplications: 9,
-  expiringCertifications: 5,
+  activeVendors: 58,
+  upcomingMarkets: 3,
+  customerVisits: 2140,
+  revenue: 41200,
+  pendingApplications: 7,
+  expiringCertifications: 4,
 };
 
 const MOCK_APPLICATIONS: {
@@ -58,7 +42,7 @@ const MOCK_APPLICATIONS: {
     status: "document_review",
   },
   { applicant_name: "Hollow Bend Herbs", categories: "Herbs & Tea", status: "document_review" },
-  { applicant_name: "Prairie Wool Co.", categories: "Fiber & Textiles", status: "submitted" },
+  { applicant_name: "Prairie Wool Co.", categories: "Fiber & Crafts", status: "submitted" },
 ];
 
 const MOCK_SCHEDULES = [
@@ -68,6 +52,8 @@ const MOCK_SCHEDULES = [
     eventDate: "2026-08-01",
     startTime: "09:00",
     endTime: "13:00",
+    boothLabel: "42 booths set",
+    boothTone: "good" as const,
   },
   {
     id: "2",
@@ -75,6 +61,8 @@ const MOCK_SCHEDULES = [
     eventDate: "2026-08-04",
     startTime: "15:00",
     endTime: "19:00",
+    boothLabel: "6 open booths",
+    boothTone: "warn" as const,
   },
   {
     id: "3",
@@ -82,12 +70,41 @@ const MOCK_SCHEDULES = [
     eventDate: "2026-08-16",
     startTime: "10:00",
     endTime: "16:00",
+    boothLabel: "Planning",
+    boothTone: "neutral" as const,
+  },
+];
+
+const MOCK_COMPLIANCE_SNAPSHOT = [
+  {
+    vendor: "Green Fields Farm",
+    doc: "USDA Organic Certificate",
+    label: "Expires in 12 days",
+    tone: "bad" as const,
+  },
+  {
+    vendor: "Miller's Honey Co.",
+    doc: "Food Handler's Permit",
+    label: "Expires in 28 days",
+    tone: "warn" as const,
+  },
+  {
+    vendor: "Blue Creek Dairy",
+    doc: "Liability Insurance",
+    label: "Expires in 30 days",
+    tone: "warn" as const,
+  },
+  {
+    vendor: "Sunroot Bakery",
+    doc: "Health Dept. Inspection",
+    label: "Expires in 6 days",
+    tone: "bad" as const,
   },
 ];
 
 const IMPACT_REPORT = {
-  communityImpact: "412 lbs of surplus produce donated to local food banks",
-  localEconomicContribution: "$1.9M estimated annual local economic contribution",
+  communityImpact: "3 SNAP/EBT matching programs · 2 school field trips hosted",
+  localEconomicContribution: "$226,900 estimated local economic contribution",
 };
 
 const STATUS_LABEL: Record<VendorApplicationStatus, string> = {
@@ -99,6 +116,23 @@ const STATUS_LABEL: Record<VendorApplicationStatus, string> = {
   activated: "Activated",
   rejected: "Rejected",
 };
+
+const STATUS_TONE: Record<VendorApplicationStatus, "good" | "warn" | "neutral"> = {
+  submitted: "neutral",
+  document_review: "warn",
+  approved: "good",
+  agreement_signed: "good",
+  payment_setup: "good",
+  activated: "good",
+  rejected: "neutral",
+};
+
+function pillClass(tone: "good" | "warn" | "bad" | "neutral") {
+  if (tone === "good") return "bg-moss-soft text-primary";
+  if (tone === "warn") return "bg-clay-soft text-accent";
+  if (tone === "bad") return "bg-danger-soft text-destructive";
+  return "bg-secondary text-secondary-foreground";
+}
 
 function formatCurrency(n: number) {
   return n.toLocaleString(undefined, {
@@ -127,21 +161,57 @@ function formatTimeRange(start: string | null, end: string | null) {
   return `${fmt(start)} – ${fmt(end)}`;
 }
 
+function daysUntil(dateStr: string) {
+  const diff = Math.ceil(
+    (new Date(`${dateStr}T00:00:00`).getTime() - new Date().setHours(0, 0, 0, 0)) / 86_400_000,
+  );
+  if (diff < 0) return "Expired";
+  if (diff === 0) return "Expires today";
+  return `Expires in ${diff} day${diff === 1 ? "" : "s"}`;
+}
+
 function OverviewPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const { profile } = useAuth();
   const { data: organization } = useOrganization();
   const { data: liveMetrics, isLoading } = useOverviewMetrics();
-  const { data: liveApplications, isLoading: applicationsLoading } =
-    useVendorApplicationsAwaitingAction();
-  const { data: liveSchedules, isLoading: schedulesLoading } = useUpcomingSchedules();
+  const { data: liveApplications } = useVendorApplicationsAwaitingAction();
+  const { data: liveSchedules } = useUpcomingSchedules();
+  const { data: liveDocuments } = useComplianceDocuments();
   const seedDemoData = useSeedDemoData();
 
   const hasOrg = Boolean(profile?.organization_id);
   const m = liveMetrics ?? MOCK_METRICS;
   const isEmptyOrg = hasOrg && liveMetrics && liveMetrics.activeVendors === 0;
   const applications = liveApplications ?? (hasOrg ? [] : MOCK_APPLICATIONS);
-  const schedules = liveSchedules ?? (hasOrg ? [] : MOCK_SCHEDULES);
+  const schedules: {
+    id: string;
+    marketName: string;
+    eventDate: string;
+    startTime: string | null;
+    endTime: string | null;
+    boothLabel?: string;
+    boothTone?: "good" | "warn" | "neutral";
+  }[] = liveSchedules
+    ? liveSchedules.map((s) => ({ ...s, boothLabel: undefined, boothTone: undefined }))
+    : hasOrg
+      ? []
+      : MOCK_SCHEDULES;
+  const complianceSnapshot =
+    liveDocuments
+      ?.filter((d) => d.status !== "verified" && d.expires_at)
+      .slice(0, 4)
+      .map((d) => ({
+        vendor: d.vendor_name,
+        doc: d.title,
+        label: daysUntil(d.expires_at as string),
+        tone:
+          d.status === "expired"
+            ? ("bad" as const)
+            : d.status === "expiring_soon"
+              ? ("bad" as const)
+              : ("warn" as const),
+      })) ?? (hasOrg ? [] : MOCK_COMPLIANCE_SNAPSHOT);
 
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long",
@@ -149,61 +219,72 @@ function OverviewPage() {
     day: "numeric",
   });
 
-  const METRICS = [
+  const TICKETS = [
     {
       label: "Active Vendors",
       value: String(m.activeVendors),
       delta: "+4 this month",
-      icon: Users,
+      tone: "good" as const,
     },
     {
       label: "Upcoming Markets",
       value: String(m.upcomingMarkets),
       delta: `${m.upcomingMarkets} scheduled`,
-      icon: CalendarDays,
+      tone: "good" as const,
     },
     {
       label: "Customer Visits",
       value: m.customerVisits.toLocaleString(),
       delta: "+12% vs last week",
-      icon: Footprints,
+      tone: "good" as const,
     },
     {
       label: "Revenue Generated",
-      value: formatCurrency(m.revenue),
+      value: <span className="font-mono">{formatCurrency(m.revenue)}</span>,
       delta: "+8% vs last week",
-      icon: DollarSign,
+      tone: "good" as const,
     },
     {
       label: "Pending Applications",
       value: String(m.pendingApplications),
       delta: "awaiting review",
-      icon: FileClock,
+      tone: "warn" as const,
     },
     {
       label: "Expiring Certifications",
       value: String(m.expiringCertifications),
       delta: "within 30 days",
-      icon: ShieldAlert,
+      tone: "bad" as const,
     },
   ];
 
   return (
     <div>
-      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+      <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+          <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
             Overview
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {today} · {organization?.name ?? (hasOrg ? "Your organization" : "Preview mode")}
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {today} · {organization?.name ?? (hasOrg ? "Your organization" : "Ohio Valley Markets")}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Button variant="outline" size="icon" title="Flag an issue">
+          <Button
+            variant="outline"
+            size="icon"
+            title="Flag an issue"
+            className="border-border bg-card"
+          >
             <Flag className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" title="Communication Hub" asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            title="Communication Hub"
+            className="border-border bg-card"
+            asChild
+          >
             <Link to="/organizer/communications">
               <Mail className="h-4 w-4" />
             </Link>
@@ -216,7 +297,7 @@ function OverviewPage() {
       </div>
 
       {isEmptyOrg && (
-        <div className="mb-6 flex flex-col items-start justify-between gap-3 rounded-2xl border border-dashed border-border bg-card/50 p-4 sm:flex-row sm:items-center">
+        <div className="mb-6 flex flex-col items-start justify-between gap-3 rounded-xl border border-dashed border-border bg-card p-4 sm:flex-row sm:items-center">
           <div>
             <p className="text-sm font-medium text-foreground">Your organization is empty.</p>
             <p className="text-sm text-muted-foreground">
@@ -238,92 +319,112 @@ function OverviewPage() {
         </div>
       )}
 
-      <h2 className="mb-3 font-[family-name:var(--font-display)] text-base font-semibold text-foreground">
+      <h2 className="mb-3 font-[family-name:var(--font-display)] text-[15.5px] font-semibold text-primary">
         This week at a glance
       </h2>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {METRICS.map((metric) => (
-          <Card key={metric.label} className="relative overflow-hidden border-dashed">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {metric.label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="font-[family-name:var(--font-display)] text-3xl font-semibold text-foreground">
-                {hasOrg && isLoading ? "—" : metric.value}
-              </div>
-              <p className="mt-1 text-xs text-primary">{metric.delta}</p>
-            </CardContent>
-            <metric.icon className="absolute right-3 top-3 h-4 w-4 text-muted-foreground/50" />
-          </Card>
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
+        {TICKETS.map((t) => (
+          <TicketCard
+            key={t.label}
+            label={t.label}
+            value={hasOrg && isLoading ? "—" : t.value}
+            delta={t.delta}
+            deltaTone={t.tone}
+          />
         ))}
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-[family-name:var(--font-display)] text-base">
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-[15px] font-semibold text-foreground">
               Vendor applications awaiting action
-            </CardTitle>
-            <Button variant="outline" size="sm" asChild>
+            </h3>
+            <Button variant="outline" size="sm" className="border-border bg-background" asChild>
               <Link to="/organizer/vendors">View all</Link>
             </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            {hasOrg && applicationsLoading ? (
-              <LoadingRow />
-            ) : applications.length === 0 ? (
-              <EmptyRow text="No applications awaiting action." />
-            ) : (
-              <div className="divide-y divide-border">
-                {applications.map((app) => (
-                  <div
-                    key={app.applicant_name}
-                    className="flex items-center justify-between gap-4 px-6 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{app.applicant_name}</p>
-                      <p className="text-xs text-muted-foreground">{app.categories}</p>
-                    </div>
-                    <Badge variant="secondary">{STATUS_LABEL[app.status]}</Badge>
-                  </div>
-                ))}
+          </div>
+          {applications.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No applications awaiting action.
+            </p>
+          ) : (
+            applications.map((app, i) => (
+              <div
+                key={app.applicant_name + i}
+                className="flex items-center justify-between gap-4 border-b border-border py-2.5 text-[13px] last:border-b-0"
+              >
+                <div>
+                  <p className="text-foreground">{app.applicant_name}</p>
+                  <p className="mt-0.5 text-[11.5px] text-muted-foreground">{app.categories}</p>
+                </div>
+                <Badge className={pillClass(STATUS_TONE[app.status])} variant="secondary">
+                  {STATUS_LABEL[app.status]}
+                </Badge>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            ))
+          )}
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-[family-name:var(--font-display)] text-base">
-              Upcoming markets
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {hasOrg && schedulesLoading ? (
-              <LoadingRow />
-            ) : schedules.length === 0 ? (
-              <EmptyRow text="No markets scheduled yet." />
-            ) : (
-              <div className="divide-y divide-border">
-                {schedules.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between gap-4 px-6 py-3">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{s.marketName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatEventDate(s.eventDate)}
-                        {formatTimeRange(s.startTime, s.endTime) &&
-                          ` · ${formatTimeRange(s.startTime, s.endTime)}`}
-                      </p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  </div>
-                ))}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="mb-3 text-[15px] font-semibold text-foreground">Upcoming markets</h3>
+          {schedules.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No markets scheduled yet.
+            </p>
+          ) : (
+            schedules.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center justify-between gap-4 border-b border-border py-2.5 text-[13px] last:border-b-0"
+              >
+                <div>
+                  <p className="font-medium text-foreground">{s.marketName}</p>
+                  <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+                    {formatEventDate(s.eventDate)}
+                    {formatTimeRange(s.startTime, s.endTime) &&
+                      ` · ${formatTimeRange(s.startTime, s.endTime)}`}
+                  </p>
+                </div>
+                {s.boothLabel && (
+                  <Badge
+                    className={pillClass(
+                      s.boothTone === "good" ? "good" : s.boothTone === "warn" ? "warn" : "neutral",
+                    )}
+                    variant="secondary"
+                  >
+                    {s.boothLabel}
+                  </Badge>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            ))
+          )}
+        </div>
+      </div>
+
+      <h2 className="mb-3 mt-7 font-[family-name:var(--font-display)] text-[15.5px] font-semibold text-primary">
+        Compliance snapshot
+      </h2>
+      <div className="rounded-xl border border-border bg-card p-5">
+        {complianceSnapshot.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Nothing needs attention right now.
+          </p>
+        ) : (
+          complianceSnapshot.map((row, i) => (
+            <div
+              key={row.vendor + row.doc + i}
+              className="flex items-center justify-between gap-4 border-b border-border py-2.5 text-[13px] last:border-b-0"
+            >
+              <span className="text-foreground">
+                {row.vendor} — {row.doc}
+              </span>
+              <Badge className={pillClass(row.tone)} variant="secondary">
+                {row.label}
+              </Badge>
+            </div>
+          ))
+        )}
       </div>
 
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>
@@ -357,7 +458,7 @@ function OverviewPage() {
               <X className="mr-2 h-4 w-4" />
               Close
             </Button>
-            <Button>Export PDF</Button>
+            <Button>Export as PDF</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -372,17 +473,4 @@ function ReportRow({ label, value }: { label: string; value: string }) {
       <span className="text-right font-medium text-foreground">{value}</span>
     </div>
   );
-}
-
-function LoadingRow() {
-  return (
-    <div className="flex items-center justify-center gap-2 p-8 text-sm text-muted-foreground">
-      <Loader2 className="h-4 w-4 animate-spin" />
-      Loading…
-    </div>
-  );
-}
-
-function EmptyRow({ text }: { text: string }) {
-  return <p className="p-6 text-center text-sm text-muted-foreground">{text}</p>;
 }

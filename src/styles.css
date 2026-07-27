@@ -44,6 +44,81 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-ring: var(--sidebar-ring);
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-moss: var(--moss, var(--leaf));
+  --color-moss-soft: var(--moss-soft, var(--secondary));
+  --color-clay: var(--clay, var(--accent));
+  --color-clay-soft: var(--clay-soft, var(--secondary));
+  --color-wheat: var(--wheat, var(--secondary));
+  --color-danger-soft: var(--danger-soft, var(--destructive));
+}
+
+/* -------------------------------------------------------------------
+ * Organizer Console theme — matches the reference build exactly.
+ * Scoped to `.organizer-theme` so the customer marketplace keeps its
+ * own palette untouched.
+ * ---------------------------------------------------------------- */
+.organizer-theme {
+  --background: oklch(0.955 0.02 95); /* #F5F1E6 paper */
+  --foreground: oklch(0.27 0.015 130); /* #22261F ink */
+  --card: oklch(0.975 0.015 90); /* #FBF8F0 paper-raised */
+  --card-foreground: oklch(0.27 0.015 130);
+  --popover: oklch(0.975 0.015 90);
+  --popover-foreground: oklch(0.27 0.015 130);
+  --primary: oklch(0.28 0.045 155); /* #1E3B2C forest */
+  --primary-foreground: oklch(0.97 0.01 90);
+  --secondary: oklch(0.9 0.03 95);
+  --secondary-foreground: oklch(0.27 0.015 130);
+  --muted: oklch(0.93 0.02 90);
+  --muted-foreground: oklch(0.45 0.02 130); /* #4B5245 ink-soft */
+  --accent: oklch(0.58 0.08 45); /* #A9724F clay */
+  --accent-foreground: oklch(0.97 0.01 90);
+  --destructive: oklch(0.5 0.13 25); /* #B0473C danger */
+  --destructive-foreground: oklch(0.97 0.01 90);
+  --border: oklch(0.27 0.015 130 / 0.13);
+  --input: oklch(0.27 0.015 130 / 0.22);
+  --ring: oklch(0.28 0.045 155);
+
+  --moss: oklch(0.55 0.08 145);
+  --moss-soft: oklch(0.92 0.03 145);
+  --clay: oklch(0.58 0.08 45);
+  --clay-soft: oklch(0.9 0.04 60);
+  --wheat: oklch(0.84 0.08 90);
+  --danger-soft: oklch(0.88 0.05 25);
+
+  --sidebar: oklch(0.28 0.045 155); /* #1E3B2C forest */
+  --sidebar-foreground: oklch(0.94 0.01 100);
+  --sidebar-border: oklch(1 0 0 / 0.1);
+  --sidebar-accent: oklch(0.84 0.08 90); /* wheat */
+  --sidebar-accent-foreground: oklch(0.18 0.03 155); /* forest-deep */
+  --sidebar-primary: oklch(0.84 0.08 90);
+  --sidebar-primary-foreground: oklch(0.18 0.03 155);
+  --sidebar-ring: oklch(0.84 0.08 90);
+}
+
+/* Ticket-style metric card: dashed top edge with two circular notches,
+ * matching the reference's .ticket component. */
+.ticket-card {
+  position: relative;
+  border-top: 3px dashed var(--color-border);
+}
+.ticket-card::before,
+.ticket-card::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: 8px;
+  height: 8px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+.ticket-card::before {
+  left: 16px;
+}
+.ticket-card::after {
+  right: 16px;
 }
 
 :root {
