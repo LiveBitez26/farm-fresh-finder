@@ -95,6 +95,7 @@ export interface Vendor {
   product_categories: string[] | null;
   website: string | null;
   photos: string[] | null;
+  farming_practices: string[] | null;
   status: "pending" | "active" | "suspended" | "inactive";
   created_at: string;
   updated_at: string;

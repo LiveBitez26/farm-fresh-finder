@@ -1,12 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
 import { Textarea } from "../../../components/ui/textarea";
 import { Button } from "../../../components/ui/button";
 import { useAuth } from "../../../hooks/use-auth";
 import { useAnnouncements, useSendAnnouncement } from "../../../hooks/use-organization-data";
 
+const communicationsSearchSchema = z.object({
+  vendor: z.string().optional(),
+});
+
 export const Route = createFileRoute("/organizer/_layout/communications")({
+  validateSearch: communicationsSearchSchema,
   component: CommunicationsPage,
 });
 
@@ -80,11 +86,16 @@ function CommunicationsPage() {
   const hasOrg = Boolean(profile?.organization_id);
   const { data: announcements, isLoading } = useAnnouncements();
   const sendAnnouncement = useSendAnnouncement();
+  const { vendor } = Route.useSearch();
 
-  const [audience, setAudience] = useState<(typeof AUDIENCES)[number]["key"]>("all_vendors");
+  const [audience, setAudience] = useState<(typeof AUDIENCES)[number]["key"]>(
+    vendor ? "specific_vendors" : "all_vendors",
+  );
   const [channel, setChannel] = useState<(typeof CHANNELS)[number]["key"]>("in_app");
   const [message, setMessage] = useState(
-    "Insurance expires in 14 days — please upload a renewed certificate before Saturday's market.",
+    vendor
+      ? `Hi ${vendor}, `
+      : "Insurance expires in 14 days — please upload a renewed certificate before Saturday's market.",
   );
   const [mockLog, setMockLog] = useState<MockAnnouncement[]>(MOCK_LOG);
 
@@ -125,6 +136,13 @@ function CommunicationsPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="mb-3 text-[15px] font-semibold text-foreground">New announcement</h3>
+
+          {vendor && (
+            <p className="mb-3 rounded-lg bg-moss-soft/60 px-3 py-2 text-xs text-primary">
+              Messaging <span className="font-semibold">{vendor}</span> — audience is set to
+              "Specific vendors."
+            </p>
+          )}
 
           <label className="mb-1.5 mt-2 block text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
             Audience

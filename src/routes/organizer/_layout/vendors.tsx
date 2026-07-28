@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Search, ChevronRight, Loader2, Plus } from "lucide-react";
 import { Input } from "../../../components/ui/input";
@@ -45,6 +45,9 @@ type VendorRow = {
   cert: string;
   checklist: boolean[];
   isLive: boolean;
+  farmLocation?: string;
+  website?: string;
+  farmingPractices?: string;
 };
 
 const CHECKLIST_LABELS = [
@@ -220,6 +223,9 @@ function buildLiveVendorRows(vendors: Vendor[]): VendorRow[] {
     cert: "See Compliance Vault for documents",
     checklist: [true, false, false, false, v.status === "active", false],
     isLive: true,
+    farmLocation: v.farm_location ?? undefined,
+    website: v.website ?? undefined,
+    farmingPractices: (v.farming_practices ?? []).join(", ") || undefined,
   }));
 }
 
@@ -339,6 +345,7 @@ function VendorProductsSection({ vendorId }: { vendorId: string }) {
 
 function VendorsPage() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const hasOrg = Boolean(profile?.organization_id);
   const { data: vendors, isLoading } = useVendors();
   const { data: applications } = useVendorApplications();
@@ -494,6 +501,41 @@ function VendorsPage() {
                   {selected.story}
                 </p>
 
+                {selected.isLive &&
+                  (selected.farmLocation || selected.website || selected.farmingPractices) && (
+                    <div className="mt-3 space-y-1.5 text-[13px]">
+                      {selected.farmLocation && (
+                        <div className="flex justify-between gap-4">
+                          <span className="text-muted-foreground">Location</span>
+                          <span className="text-right font-medium text-foreground">
+                            {selected.farmLocation}
+                          </span>
+                        </div>
+                      )}
+                      {selected.website && (
+                        <div className="flex justify-between gap-4">
+                          <span className="text-muted-foreground">Website</span>
+                          <a
+                            href={selected.website}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-right font-medium text-primary underline"
+                          >
+                            {selected.website}
+                          </a>
+                        </div>
+                      )}
+                      {selected.farmingPractices && (
+                        <div className="flex justify-between gap-4">
+                          <span className="shrink-0 text-muted-foreground">Practices</span>
+                          <span className="text-right font-medium text-foreground">
+                            {selected.farmingPractices}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                 <p className="mb-2 mt-4 text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Onboarding checklist
                 </p>
@@ -522,9 +564,15 @@ function VendorsPage() {
                 {selected.isLive && <VendorProductsSection vendorId={selected.id} />}
 
                 <div className="mt-5 flex gap-2">
-                  <Button>Message vendor</Button>
-                  <Button variant="outline" className="border-border">
-                    View full profile
+                  <Button
+                    onClick={() =>
+                      navigate({
+                        to: "/organizer/communications",
+                        search: { vendor: selected.name },
+                      })
+                    }
+                  >
+                    Message vendor
                   </Button>
                 </div>
               </div>
