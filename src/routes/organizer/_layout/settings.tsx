@@ -4,8 +4,16 @@ import { Loader2, Pencil, Check, X } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
 import { useAuth } from "../../../hooks/use-auth";
+import { CURRENCY_OPTIONS } from "../../../lib/currency";
 import {
   useOrganization,
   useOrganizationStaff,
@@ -86,19 +94,21 @@ function SettingsPage() {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [country, setCountry] = useState("");
+  const [currency, setCurrency] = useState("USD");
   const [staffDialogOpen, setStaffDialogOpen] = useState(false);
 
   useEffect(() => {
     if (organization) {
       setName(organization.name);
       setCountry(organization.country ?? "");
+      setCurrency(organization.default_currency ?? "USD");
     }
   }, [organization]);
 
   function handleSave() {
     if (!name.trim()) return;
     updateOrganization.mutate(
-      { name: name.trim(), country: country.trim() },
+      { name: name.trim(), country: country.trim(), defaultCurrency: currency },
       { onSuccess: () => setEditing(false) },
     );
   }
@@ -137,6 +147,24 @@ function SettingsPage() {
               <label className="text-xs font-semibold text-muted-foreground">Country</label>
               <Input value={country} onChange={(e) => setCountry(e.target.value)} />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground">Currency</label>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCY_OPTIONS.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Used for all prices, orders, and payments across this organization.
+              </p>
+            </div>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleSave} disabled={updateOrganization.isPending}>
                 {updateOrganization.isPending ? (
@@ -164,6 +192,7 @@ function SettingsPage() {
               value={organization?.name ?? "Ohio Valley Markets"}
             />
             <FieldRow label="Country" value={organization?.country ?? "United States"} />
+            <FieldRow label="Currency" value={organization?.default_currency ?? "USD"} />
             <FieldRow
               label="Plan"
               value={organization?.subscription_plan === "trial" ? "Trial" : "Growth — $149/mo"}

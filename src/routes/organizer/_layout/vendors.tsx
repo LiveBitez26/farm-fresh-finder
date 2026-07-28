@@ -20,8 +20,10 @@ import {
   SheetDescription,
 } from "../../../components/ui/sheet";
 import { useAuth } from "../../../hooks/use-auth";
+import { formatMoney } from "../../../lib/currency";
 import {
   useCreateProduct,
+  useOrganization,
   useProductsForVendor,
   useToggleProductActive,
   useUpdateVendorChecklist,
@@ -243,7 +245,13 @@ function buildLiveVendorRows(vendors: Vendor[]): VendorRow[] {
   }));
 }
 
-function VendorProductsSection({ vendorId }: { vendorId: string }) {
+function VendorProductsSection({
+  vendorId,
+  currency,
+}: {
+  vendorId: string;
+  currency: string | null | undefined;
+}) {
   const { data: products, isLoading } = useProductsForVendor(vendorId);
   const createProduct = useCreateProduct();
   const toggleActive = useToggleProductActive();
@@ -337,7 +345,7 @@ function VendorProductsSection({ vendorId }: { vendorId: string }) {
             <div>
               <p className="text-foreground">{p.name}</p>
               <p className="text-[11.5px] text-muted-foreground">
-                {p.category ?? "—"} · ${p.price}
+                {p.category ?? "—"} · {formatMoney(p.price, currency)}
                 {p.unit ? ` / ${p.unit}` : ""}
               </p>
             </div>
@@ -362,6 +370,7 @@ function VendorsPage() {
   const navigate = useNavigate();
   const hasOrg = Boolean(profile?.organization_id);
   const { data: vendors, isLoading } = useVendors();
+  const { data: organization } = useOrganization();
   const { data: boothMap } = useVendorBoothAssignmentsMap();
   const { data: applications } = useVendorApplications();
   const [search, setSearch] = useState("");
@@ -615,7 +624,12 @@ function VendorsPage() {
                   );
                 })}
 
-                {selected.isLive && <VendorProductsSection vendorId={selected.id} />}
+                {selected.isLive && (
+                  <VendorProductsSection
+                    vendorId={selected.id}
+                    currency={organization?.default_currency}
+                  />
+                )}
 
                 <div className="mt-5 flex gap-2">
                   <Button

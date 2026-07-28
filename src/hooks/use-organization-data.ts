@@ -148,16 +148,20 @@ export function useOrganization() {
   });
 }
 
-/** Update the organization's own editable fields (name, country). */
+/** Update the organization's own editable fields (name, country, currency). */
 export function useUpdateOrganization() {
   const organizationId = useOrganizationId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; country?: string }) => {
+    mutationFn: async (input: { name: string; country?: string; defaultCurrency?: string }) => {
       if (!organizationId) throw new Error("No organization");
       const { error } = await supabase
         .from("organizations")
-        .update({ name: input.name, country: input.country || null })
+        .update({
+          name: input.name,
+          country: input.country || null,
+          ...(input.defaultCurrency ? { default_currency: input.defaultCurrency } : {}),
+        })
         .eq("id", organizationId);
       if (error) throw error;
     },
@@ -712,6 +716,7 @@ export function useProductsForVendor(vendorId: string | undefined) {
 /** Add a new product for a vendor. */
 export function useCreateProduct() {
   const organizationId = useOrganizationId();
+  const { data: organization } = useOrganization();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
@@ -728,6 +733,7 @@ export function useCreateProduct() {
         name: input.name,
         category: input.category || null,
         price: input.price,
+        currency: organization?.default_currency ?? "USD",
         unit: input.unit || null,
         is_active: true,
       });

@@ -6,6 +6,7 @@ import { Badge } from "../../../components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
 import { Separator } from "../../../components/ui/separator";
 import { TicketCard } from "../../../components/organizer/ticket-card";
+import { formatMoney } from "../../../lib/currency";
 import { useAuth } from "../../../hooks/use-auth";
 import {
   useComplianceDocuments,
@@ -134,14 +135,6 @@ function pillClass(tone: "good" | "warn" | "bad" | "neutral") {
   return "bg-secondary text-secondary-foreground";
 }
 
-function formatCurrency(n: number) {
-  return n.toLocaleString(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
-}
-
 function formatEventDate(dateStr: string) {
   return new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
     month: "short",
@@ -240,7 +233,9 @@ function OverviewPage() {
     },
     {
       label: "Revenue Generated",
-      value: <span className="font-mono">{formatCurrency(m.revenue)}</span>,
+      value: (
+        <span className="font-mono">{formatMoney(m.revenue, organization?.default_currency)}</span>
+      ),
       delta: "+8% vs last week",
       tone: "good" as const,
     },
@@ -436,7 +431,10 @@ function OverviewPage() {
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <ReportRow label="Vendor count" value={String(m.activeVendors)} />
-            <ReportRow label="Sales volume" value={formatCurrency(m.revenue)} />
+            <ReportRow
+              label="Sales volume"
+              value={formatMoney(m.revenue, organization?.default_currency)}
+            />
             <ReportRow
               label="Customer attendance"
               value={`${m.customerVisits.toLocaleString()} visits`}
