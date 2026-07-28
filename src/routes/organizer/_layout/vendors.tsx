@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, ChevronRight, Loader2, Plus } from "lucide-react";
 import { Input } from "../../../components/ui/input";
 import { Badge } from "../../../components/ui/badge";
@@ -19,6 +19,13 @@ import {
   SheetTitle,
   SheetDescription,
 } from "../../../components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
+import {
+  ProductForm,
+  EMPTY_PRODUCT_FORM,
+  validateProductForm,
+  type ProductFormState,
+} from "../../../components/shared/product-form";
 import { useAuth } from "../../../hooks/use-auth";
 import { formatMoney } from "../../../lib/currency";
 import {
@@ -26,6 +33,7 @@ import {
   useOrganization,
   useProductsForVendor,
   useToggleProductActive,
+  useUpdateProduct,
   useUpdateVendorChecklist,
   useVendorApplications,
   useVendorBoothAssignment,
@@ -33,7 +41,7 @@ import {
   useVendorHasVerifiedInsurance,
   useVendors,
 } from "../../../hooks/use-organization-data";
-import type { Vendor, VendorApplicationStatus } from "../../../lib/types";
+import type { Product, Vendor, VendorApplicationStatus } from "../../../lib/types";
 
 export const Route = createFileRoute("/organizer/_layout/vendors")({
   component: VendorsPage,
@@ -254,33 +262,91 @@ function VendorProductsSection({
 }) {
   const { data: products, isLoading } = useProductsForVendor(vendorId);
   const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
   const toggleActive = useToggleProductActive();
 
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
-  const [price, setPrice] = useState("");
-  const [unit, setUnit] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addForm, setAddForm] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
+  const [addError, setAddError] = useState<string | null>(null);
+
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editForm, setEditForm] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (editingProduct) {
+      setEditForm({
+        name: editingProduct.name,
+        description: editingProduct.description ?? "",
+        category: editingProduct.category ?? "",
+        price: String(editingProduct.price),
+        unit: editingProduct.unit ?? "",
+        isSubscriptionEligible: editingProduct.is_subscription_eligible,
+        frequencies: (editingProduct.subscription_frequencies ??
+          []) as ProductFormState["frequencies"],
+        existingPhotoUrls:
+          editingProduct.photo_urls ?? (editingProduct.photo_url ? [editingProduct.photo_url] : []),
+        newPhotoFiles: [],
+        newPhotoPreviews: [],
+      });
+      setEditError(null);
+    }
+  }, [editingProduct]);
 
   function handleAdd() {
-    const parsedPrice = Number(price);
-    if (!name.trim() || Number.isNaN(parsedPrice)) return;
+    setAddError(null);
+    const validationError = validateProductForm(addForm);
+    if (validationError) {
+      setAddError(validationError);
+      return;
+    }
     createProduct.mutate(
       {
         vendorId,
-        name: name.trim(),
-        category: category.trim(),
-        price: parsedPrice,
-        unit: unit.trim(),
+        name: addForm.name.trim(),
+        description: addForm.description.trim(),
+        category: addForm.category.trim(),
+        price: Number(addForm.price),
+        unit: addForm.unit.trim(),
+        isSubscriptionEligible: addForm.isSubscriptionEligible,
+        subscriptionFrequencies: addForm.frequencies,
+        photoFiles: addForm.newPhotoFiles,
       },
       {
         onSuccess: () => {
-          setName("");
-          setCategory("");
-          setPrice("");
-          setUnit("");
-          setShowForm(false);
+          setAddForm(EMPTY_PRODUCT_FORM);
+          setShowAddForm(false);
         },
+        onError: (e: Error) => setAddError(e.message),
+      },
+    );
+  }
+
+  function handleUpdate() {
+    setEditError(null);
+    if (!editingProduct) return;
+    const validationError = validateProductForm(editForm);
+    if (validationError) {
+      setEditError(validationError);
+      return;
+    }
+    updateProduct.mutate(
+      {
+        productId: editingProduct.id,
+        vendorId,
+        name: editForm.name.trim(),
+        description: editForm.description.trim(),
+        category: editForm.category.trim(),
+        price: Number(editForm.price),
+        unit: editForm.unit.trim(),
+        isSubscriptionEligible: editForm.isSubscriptionEligible,
+        subscriptionFrequencies: editForm.frequencies,
+        keptPhotoUrls: editForm.existingPhotoUrls,
+        newPhotoFiles: editForm.newPhotoFiles,
+      },
+      {
+        onSuccess: () => setEditingProduct(null),
+        onError: (e: Error) => setEditError(e.message),
       },
     );
   }
@@ -291,46 +357,29 @@ function VendorProductsSection({
         <p className="text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
           Products
         </p>
-        <Button size="sm" variant="ghost" onClick={() => setShowForm((v) => !v)}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setAddForm(EMPTY_PRODUCT_FORM);
+            setShowAddForm((v) => !v);
+          }}
+        >
           <Plus className="mr-1 h-3.5 w-3.5" />
           Add
         </Button>
       </div>
 
-      {showForm && (
-        <div className="mt-2 space-y-2 rounded-lg border border-border bg-card p-3">
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Product name"
-            className="h-8 text-xs"
+      {showAddForm && (
+        <div className="mt-2 rounded-lg border border-border bg-card p-3">
+          <ProductForm
+            form={addForm}
+            setForm={setAddForm}
+            error={addError}
+            submitting={createProduct.isPending}
+            onSubmit={handleAdd}
+            submitLabel="Save product"
           />
-          <div className="flex gap-2">
-            <Input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="Category"
-              className="h-8 text-xs"
-            />
-            <Input
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="Price"
-              type="number"
-              step="0.01"
-              className="h-8 w-20 text-xs"
-            />
-            <Input
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              placeholder="Unit (lb, dozen…)"
-              className="h-8 text-xs"
-            />
-          </div>
-          <Button size="sm" onClick={handleAdd} disabled={createProduct.isPending}>
-            {createProduct.isPending && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-            Save product
-          </Button>
         </div>
       )}
 
@@ -349,18 +398,44 @@ function VendorProductsSection({
                 {p.unit ? ` / ${p.unit}` : ""}
               </p>
             </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => toggleActive.mutate({ productId: p.id, isActive: !p.is_active })}
-            >
-              {p.is_active ? "Active" : "Inactive"}
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="ghost" onClick={() => setEditingProduct(p)}>
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => toggleActive.mutate({ productId: p.id, isActive: !p.is_active })}
+              >
+                {p.is_active ? "Active" : "Inactive"}
+              </Button>
+            </div>
           </div>
         ))
       ) : (
         <p className="py-3 text-center text-xs text-muted-foreground">No products yet.</p>
       )}
+
+      <Dialog
+        open={Boolean(editingProduct)}
+        onOpenChange={(open) => !open && setEditingProduct(null)}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-[family-name:var(--font-display)]">
+              Edit Product
+            </DialogTitle>
+          </DialogHeader>
+          <ProductForm
+            form={editForm}
+            setForm={setEditForm}
+            error={editError}
+            submitting={updateProduct.isPending}
+            onSubmit={handleUpdate}
+            submitLabel="Save changes"
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

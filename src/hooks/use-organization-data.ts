@@ -722,21 +722,102 @@ export function useCreateProduct() {
     mutationFn: async (input: {
       vendorId: string;
       name: string;
+      description: string;
       category: string;
       price: number;
       unit: string;
+      isSubscriptionEligible: boolean;
+      subscriptionFrequencies: ("weekly" | "biweekly" | "monthly")[];
+      photoFiles: File[];
     }) => {
       if (!organizationId) throw new Error("No organization");
+      const photoUrls: string[] = [];
+      for (const file of input.photoFiles) {
+        const path = `${input.vendorId}/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("product-photos")
+          .upload(path, file);
+        if (uploadError) throw uploadError;
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("product-photos").getPublicUrl(path);
+        photoUrls.push(publicUrl);
+      }
+
       const { error } = await supabase.from("products").insert({
         organization_id: organizationId,
         vendor_id: input.vendorId,
         name: input.name,
+        description: input.description || null,
         category: input.category || null,
         price: input.price,
         currency: organization?.default_currency ?? "USD",
         unit: input.unit || null,
+        is_subscription_eligible: input.isSubscriptionEligible,
+        subscription_frequencies: input.isSubscriptionEligible
+          ? input.subscriptionFrequencies
+          : null,
+        photo_url: photoUrls[0] ?? null,
+        photo_urls: photoUrls.length ? photoUrls : null,
         is_active: true,
       });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+}
+
+/** Update an existing product from the organizer side — same
+ * capabilities as the vendor's own edit (full field edit, photo
+ * management, subscription frequencies). */
+export function useUpdateProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      productId: string;
+      vendorId: string;
+      name: string;
+      description: string;
+      category: string;
+      price: number;
+      unit: string;
+      isSubscriptionEligible: boolean;
+      subscriptionFrequencies: ("weekly" | "biweekly" | "monthly")[];
+      keptPhotoUrls: string[];
+      newPhotoFiles: File[];
+    }) => {
+      const newUrls: string[] = [];
+      for (const file of input.newPhotoFiles) {
+        const path = `${input.vendorId}/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("product-photos")
+          .upload(path, file);
+        if (uploadError) throw uploadError;
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("product-photos").getPublicUrl(path);
+        newUrls.push(publicUrl);
+      }
+      const allUrls = [...input.keptPhotoUrls, ...newUrls];
+
+      const { error } = await supabase
+        .from("products")
+        .update({
+          name: input.name,
+          description: input.description || null,
+          category: input.category || null,
+          price: input.price,
+          unit: input.unit || null,
+          is_subscription_eligible: input.isSubscriptionEligible,
+          subscription_frequencies: input.isSubscriptionEligible
+            ? input.subscriptionFrequencies
+            : null,
+          photo_url: allUrls[0] ?? null,
+          photo_urls: allUrls.length ? allUrls : null,
+        })
+        .eq("id", input.productId);
       if (error) throw error;
     },
     onSuccess: () => {
