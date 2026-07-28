@@ -230,6 +230,24 @@ function MarketDetail({
   const { data: market, isLoading: marketLoading } = usePublicMarket(marketId);
   const { data: vendors, isLoading: vendorsLoading } = usePublicMarketVendors(marketId);
 
+  if (!marketLoading && !market) {
+    return (
+      <div className="px-5 pt-16 text-center">
+        <button
+          onClick={onBack}
+          className="mx-auto mb-6 grid h-11 w-11 place-items-center rounded-full bg-secondary text-foreground"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <Store className="mx-auto h-8 w-8 text-muted-foreground" />
+        <p className="mt-3 text-sm font-medium text-foreground">Market not found</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          This market may no longer be active. Head back to see what's available.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-in fade-in slide-in-from-right-2 duration-300">
       <div className="relative h-[260px] overflow-hidden rounded-b-[36px] bg-gradient-to-br from-primary/80 to-earth md:h-[380px] md:rounded-[32px]">
@@ -364,6 +382,24 @@ function FarmerScreen({
 }) {
   const { data: vendor, isLoading: vendorLoading } = usePublicVendor(vendorId);
   const { data: products, isLoading: productsLoading } = usePublicVendorProducts(vendorId);
+
+  if (!vendorLoading && !vendor) {
+    return (
+      <div className="px-5 pt-16 text-center">
+        <button
+          onClick={onBack}
+          className="mx-auto mb-6 grid h-11 w-11 place-items-center rounded-full bg-secondary text-foreground"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <ImageOff className="mx-auto h-8 w-8 text-muted-foreground" />
+        <p className="mt-3 text-sm font-medium text-foreground">Farmer not found</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          This vendor may no longer be active. Head back to see other farmers.
+        </p>
+      </div>
+    );
+  }
 
   const subscriptionProducts = (products ?? []).filter((p) => p.is_subscription_eligible);
   const oneTimeProducts = (products ?? []).filter((p) => !p.is_subscription_eligible);
@@ -611,7 +647,7 @@ function ProfileScreen() {
         </div>
         <h1 className="mt-4 font-display text-2xl font-semibold">Your Profile</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Manage subscriptions, delivery addresses, and farmer favorites.
+          Manage subscriptions and your favorite farmers.
         </p>
       </div>
 
