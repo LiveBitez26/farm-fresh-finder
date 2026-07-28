@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Navigate, Link, useRouterState } from "@tanstack/react-router";
-import { Loader2, Leaf, LayoutDashboard, Package, User, LogOut } from "lucide-react";
+import { Loader2, Leaf, LayoutDashboard, Package, User, FileText, LogOut } from "lucide-react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/vendor/_layout")({
 const NAV_ITEMS = [
   { to: "/vendor", label: "Overview", icon: LayoutDashboard },
   { to: "/vendor/products", label: "My Products", icon: Package },
+  { to: "/vendor/documents", label: "Documents", icon: FileText },
   { to: "/vendor/profile", label: "Farm Profile", icon: User },
 ] as const;
 

@@ -25,6 +25,7 @@ import { Route as OrganizerLayoutScheduleRouteImport } from './routes/organizer/
 import { Route as OrganizerLayoutSettingsRouteImport } from './routes/organizer/_layout/settings'
 import { Route as OrganizerLayoutVendorsRouteImport } from './routes/organizer/_layout/vendors'
 import { Route as VendorLayoutIndexRouteImport } from './routes/vendor/_layout/index'
+import { Route as VendorLayoutDocumentsRouteImport } from './routes/vendor/_layout/documents'
 import { Route as VendorLayoutProductsRouteImport } from './routes/vendor/_layout/products'
 import { Route as VendorLayoutProfileRouteImport } from './routes/vendor/_layout/profile'
 import { Route as VendorClaimVendorIdRouteImport } from './routes/vendor/claim.$vendorId'
@@ -112,6 +113,11 @@ const VendorLayoutIndexRoute = VendorLayoutIndexRouteImport.update({
   path: '/',
   getParentRoute: () => VendorLayoutRoute,
 } as any)
+const VendorLayoutDocumentsRoute = VendorLayoutDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => VendorLayoutRoute,
+} as any)
 const VendorLayoutProductsRoute = VendorLayoutProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/organizer/schedule': typeof OrganizerLayoutScheduleRoute
   '/organizer/settings': typeof OrganizerLayoutSettingsRoute
   '/organizer/vendors': typeof OrganizerLayoutVendorsRoute
+  '/vendor/documents': typeof VendorLayoutDocumentsRoute
   '/vendor/products': typeof VendorLayoutProductsRoute
   '/vendor/profile': typeof VendorLayoutProfileRoute
   '/vendor/claim/$vendorId': typeof VendorClaimVendorIdRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/organizer/schedule': typeof OrganizerLayoutScheduleRoute
   '/organizer/settings': typeof OrganizerLayoutSettingsRoute
   '/organizer/vendors': typeof OrganizerLayoutVendorsRoute
+  '/vendor/documents': typeof VendorLayoutDocumentsRoute
   '/vendor/products': typeof VendorLayoutProductsRoute
   '/vendor/profile': typeof VendorLayoutProfileRoute
   '/vendor/claim/$vendorId': typeof VendorClaimVendorIdRoute
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/organizer/_layout/schedule': typeof OrganizerLayoutScheduleRoute
   '/organizer/_layout/settings': typeof OrganizerLayoutSettingsRoute
   '/organizer/_layout/vendors': typeof OrganizerLayoutVendorsRoute
+  '/vendor/_layout/documents': typeof VendorLayoutDocumentsRoute
   '/vendor/_layout/products': typeof VendorLayoutProductsRoute
   '/vendor/_layout/profile': typeof VendorLayoutProfileRoute
   '/vendor/claim/$vendorId': typeof VendorClaimVendorIdRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/organizer/schedule'
     | '/organizer/settings'
     | '/organizer/vendors'
+    | '/vendor/documents'
     | '/vendor/products'
     | '/vendor/profile'
     | '/vendor/claim/$vendorId'
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/organizer/schedule'
     | '/organizer/settings'
     | '/organizer/vendors'
+    | '/vendor/documents'
     | '/vendor/products'
     | '/vendor/profile'
     | '/vendor/claim/$vendorId'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '/organizer/_layout/schedule'
     | '/organizer/_layout/settings'
     | '/organizer/_layout/vendors'
+    | '/vendor/_layout/documents'
     | '/vendor/_layout/products'
     | '/vendor/_layout/profile'
     | '/vendor/claim/$vendorId'
@@ -378,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorLayoutIndexRouteImport
       parentRoute: typeof VendorLayoutRoute
     }
+    '/vendor/_layout/documents': {
+      id: '/vendor/_layout/documents'
+      path: '/documents'
+      fullPath: '/vendor/documents'
+      preLoaderRoute: typeof VendorLayoutDocumentsRouteImport
+      parentRoute: typeof VendorLayoutRoute
+    }
     '/vendor/_layout/products': {
       id: '/vendor/_layout/products'
       path: '/products'
@@ -431,12 +450,14 @@ const OrganizerLayoutRouteWithChildren = OrganizerLayoutRoute._addFileChildren(
 )
 
 interface VendorLayoutRouteChildren {
+  VendorLayoutDocumentsRoute: typeof VendorLayoutDocumentsRoute
   VendorLayoutProductsRoute: typeof VendorLayoutProductsRoute
   VendorLayoutProfileRoute: typeof VendorLayoutProfileRoute
   VendorLayoutIndexRoute: typeof VendorLayoutIndexRoute
 }
 
 const VendorLayoutRouteChildren: VendorLayoutRouteChildren = {
+  VendorLayoutDocumentsRoute: VendorLayoutDocumentsRoute,
   VendorLayoutProductsRoute: VendorLayoutProductsRoute,
   VendorLayoutProfileRoute: VendorLayoutProfileRoute,
   VendorLayoutIndexRoute: VendorLayoutIndexRoute,

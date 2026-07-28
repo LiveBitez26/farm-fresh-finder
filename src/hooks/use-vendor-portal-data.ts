@@ -122,7 +122,22 @@ export function useCreateMyProduct() {
       price: number;
       unit: string;
       currency: string;
+      isSubscriptionEligible: boolean;
+      photoFile?: File;
     }) => {
+      let photoUrl: string | null = null;
+      if (input.photoFile) {
+        const path = `${input.vendorId}/${Date.now()}-${input.photoFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("product-photos")
+          .upload(path, input.photoFile);
+        if (uploadError) throw uploadError;
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("product-photos").getPublicUrl(path);
+        photoUrl = publicUrl;
+      }
+
       const { error } = await supabase.from("products").insert({
         organization_id: input.organizationId,
         vendor_id: input.vendorId,
@@ -131,6 +146,8 @@ export function useCreateMyProduct() {
         price: input.price,
         currency: input.currency,
         unit: input.unit || null,
+        is_subscription_eligible: input.isSubscriptionEligible,
+        photo_url: photoUrl,
         is_active: true,
       });
       if (error) throw error;
@@ -178,8 +195,48 @@ export function useMyUpcomingAssignments(vendorId: string | undefined) {
   });
 }
 
-/** The vendor's own compliance documents (read-only — verification stays
- * the organizer's job). */
+/** Upload a compliance document file and create its record in one step. */
+export function useUploadComplianceDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      vendorId: string;
+      organizationId: string;
+      documentType: string;
+      title: string;
+      expiresAt?: string;
+      file: File;
+    }) => {
+      const path = `${input.vendorId}/${Date.now()}-${input.file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("compliance-documents")
+        .upload(path, input.file);
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("compliance-documents").getPublicUrl(path);
+
+      const { error } = await supabase.from("documents").insert({
+        organization_id: input.organizationId,
+        vendor_id: input.vendorId,
+        document_type: input.documentType,
+        title: input.title,
+        file_url: publicUrl,
+        expires_at: input.expiresAt || null,
+        status: "pending_review",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my_documents"] });
+    },
+  });
+}
+
+/** The vendor's own compliance documents (read-only view — verification
+ * stays the organizer's job; uploading is handled by
+ * useUploadComplianceDocument above). */
 export function useMyDocuments(vendorId: string | undefined) {
   return useQuery({
     queryKey: ["my_documents", vendorId],
