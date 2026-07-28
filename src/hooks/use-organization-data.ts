@@ -502,3 +502,60 @@ export function useAssignVendorToBooth() {
     },
   });
 }
+
+/** Recent announcements for the Communication Hub log. */
+export function useAnnouncements(limit = 10) {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["announcements", organizationId, limit],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("announcements")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return (
+        (data as {
+          id: string;
+          audience: "all_vendors" | "specific_vendors" | "customers";
+          channel: "in_app" | "email" | "sms";
+          message: string;
+          created_at: string;
+        }[]) ?? []
+      );
+    },
+  });
+}
+
+/** Send (create) a new announcement. */
+export function useSendAnnouncement() {
+  const organizationId = useOrganizationId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      audience,
+      channel,
+      message,
+    }: {
+      audience: "all_vendors" | "specific_vendors" | "customers";
+      channel: "in_app" | "email" | "sms";
+      message: string;
+    }) => {
+      if (!organizationId) throw new Error("No organization");
+      const { error } = await supabase.from("announcements").insert({
+        organization_id: organizationId,
+        audience,
+        channel,
+        message,
+        sent_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["announcements"] });
+    },
+  });
+}

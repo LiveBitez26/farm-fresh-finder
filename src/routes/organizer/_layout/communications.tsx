@@ -1,18 +1,36 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Textarea } from "../../../components/ui/textarea";
 import { Button } from "../../../components/ui/button";
+import { useAuth } from "../../../hooks/use-auth";
+import { useAnnouncements, useSendAnnouncement } from "../../../hooks/use-organization-data";
 
 export const Route = createFileRoute("/organizer/_layout/communications")({
   component: CommunicationsPage,
 });
 
-const AUDIENCES = ["All vendors", "Specific vendors", "Customers"] as const;
-const CHANNELS = ["In-app", "Email", "SMS"] as const;
+const AUDIENCES = [
+  { key: "all_vendors" as const, label: "All vendors" },
+  { key: "specific_vendors" as const, label: "Specific vendors" },
+  { key: "customers" as const, label: "Customers" },
+];
+const CHANNELS = [
+  { key: "in_app" as const, label: "In-app" },
+  { key: "email" as const, label: "Email" },
+  { key: "sms" as const, label: "SMS" },
+];
 
-type Announcement = { audience: string; channel: string; text: string; when: string };
+const AUDIENCE_LABEL: Record<string, string> = {
+  all_vendors: "All vendors",
+  specific_vendors: "Specific vendors",
+  customers: "Customers",
+};
+const CHANNEL_LABEL: Record<string, string> = { in_app: "In-app", email: "Email", sms: "SMS" };
 
-const INITIAL_LOG: Announcement[] = [
+type MockAnnouncement = { audience: string; channel: string; text: string; when: string };
+
+const MOCK_LOG: MockAnnouncement[] = [
   {
     audience: "All vendors",
     channel: "Email",
@@ -48,19 +66,49 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
   );
 }
 
+function formatWhen(iso: string) {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 function CommunicationsPage() {
-  const [audience, setAudience] = useState<(typeof AUDIENCES)[number]>("All vendors");
-  const [channel, setChannel] = useState<(typeof CHANNELS)[number]>("In-app");
+  const { profile } = useAuth();
+  const hasOrg = Boolean(profile?.organization_id);
+  const { data: announcements, isLoading } = useAnnouncements();
+  const sendAnnouncement = useSendAnnouncement();
+
+  const [audience, setAudience] = useState<(typeof AUDIENCES)[number]["key"]>("all_vendors");
+  const [channel, setChannel] = useState<(typeof CHANNELS)[number]["key"]>("in_app");
   const [message, setMessage] = useState(
     "Insurance expires in 14 days — please upload a renewed certificate before Saturday's market.",
   );
-  const [log, setLog] = useState<Announcement[]>(INITIAL_LOG);
+  const [mockLog, setMockLog] = useState<MockAnnouncement[]>(MOCK_LOG);
 
   function handleSend() {
     const text = message.trim();
     if (!text) return;
-    setLog([{ audience, channel, text, when: "Just now" }, ...log]);
-    setMessage("");
+
+    if (hasOrg) {
+      sendAnnouncement.mutate(
+        { audience, channel, message: text },
+        { onSuccess: () => setMessage("") },
+      );
+    } else {
+      setMockLog([
+        {
+          audience: AUDIENCE_LABEL[audience],
+          channel: CHANNEL_LABEL[channel],
+          text,
+          when: "Just now",
+        },
+        ...mockLog,
+      ]);
+      setMessage("");
+    }
   }
 
   return (
@@ -83,7 +131,12 @@ function CommunicationsPage() {
           </label>
           <div>
             {AUDIENCES.map((a) => (
-              <Chip key={a} label={a} active={audience === a} onClick={() => setAudience(a)} />
+              <Chip
+                key={a.key}
+                label={a.label}
+                active={audience === a.key}
+                onClick={() => setAudience(a.key)}
+              />
             ))}
           </div>
 
@@ -92,7 +145,12 @@ function CommunicationsPage() {
           </label>
           <div>
             {CHANNELS.map((c) => (
-              <Chip key={c} label={c} active={channel === c} onClick={() => setChannel(c)} />
+              <Chip
+                key={c.key}
+                label={c.label}
+                active={channel === c.key}
+                onClick={() => setChannel(c.key)}
+              />
             ))}
           </div>
 
@@ -106,21 +164,48 @@ function CommunicationsPage() {
             className="min-h-[90px] border-border bg-background text-[13px]"
           />
 
-          <Button className="mt-3.5" onClick={handleSend}>
+          <Button className="mt-3.5" onClick={handleSend} disabled={sendAnnouncement.isPending}>
+            {sendAnnouncement.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Send announcement
           </Button>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="mb-3 text-[15px] font-semibold text-foreground">Recent announcements</h3>
-          {log.map((a, i) => (
-            <div key={i} className="border-b border-border py-2.5 text-[13px] last:border-b-0">
-              <p className="text-foreground">{a.text}</p>
-              <p className="mt-0.5 text-[11.5px] text-muted-foreground">
-                {a.audience} · {a.channel} · {a.when}
+          {hasOrg ? (
+            isLoading ? (
+              <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading…
+              </div>
+            ) : announcements && announcements.length > 0 ? (
+              announcements.map((a) => (
+                <div
+                  key={a.id}
+                  className="border-b border-border py-2.5 text-[13px] last:border-b-0"
+                >
+                  <p className="text-foreground">{a.message}</p>
+                  <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+                    {AUDIENCE_LABEL[a.audience]} · {CHANNEL_LABEL[a.channel]} ·{" "}
+                    {formatWhen(a.created_at)}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                No announcements sent yet.
               </p>
-            </div>
-          ))}
+            )
+          ) : (
+            mockLog.map((a, i) => (
+              <div key={i} className="border-b border-border py-2.5 text-[13px] last:border-b-0">
+                <p className="text-foreground">{a.text}</p>
+                <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+                  {a.audience} · {a.channel} · {a.when}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
