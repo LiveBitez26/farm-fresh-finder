@@ -111,6 +111,62 @@ export function useMyProducts(vendorId: string | undefined) {
 }
 
 /** Add a product for the signed-in vendor's own listing. */
+/** Update an existing product the vendor already owns — full edit,
+ * including adding new photos and/or dropping existing ones. */
+export function useUpdateMyProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      productId: string;
+      vendorId: string;
+      name: string;
+      description: string;
+      category: string;
+      price: number;
+      unit: string;
+      isSubscriptionEligible: boolean;
+      subscriptionFrequencies: ("weekly" | "biweekly" | "monthly")[];
+      keptPhotoUrls: string[];
+      newPhotoFiles: File[];
+    }) => {
+      const newUrls: string[] = [];
+      for (const file of input.newPhotoFiles) {
+        const path = `${input.vendorId}/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("product-photos")
+          .upload(path, file);
+        if (uploadError) throw uploadError;
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("product-photos").getPublicUrl(path);
+        newUrls.push(publicUrl);
+      }
+      const allUrls = [...input.keptPhotoUrls, ...newUrls];
+
+      const { error } = await supabase
+        .from("products")
+        .update({
+          name: input.name,
+          description: input.description || null,
+          category: input.category || null,
+          price: input.price,
+          unit: input.unit || null,
+          is_subscription_eligible: input.isSubscriptionEligible,
+          subscription_frequencies: input.isSubscriptionEligible
+            ? input.subscriptionFrequencies
+            : null,
+          photo_url: allUrls[0] ?? null,
+          photo_urls: allUrls.length ? allUrls : null,
+        })
+        .eq("id", input.productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my_products"] });
+    },
+  });
+}
+
 export function useCreateMyProduct() {
   const queryClient = useQueryClient();
   return useMutation({
