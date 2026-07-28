@@ -25,6 +25,7 @@ import {
   useProductsForVendor,
   useToggleProductActive,
   useVendorApplications,
+  useVendorBoothAssignment,
   useVendors,
 } from "../../../hooks/use-organization-data";
 import type { Vendor, VendorApplicationStatus } from "../../../lib/types";
@@ -344,6 +345,9 @@ function VendorsPage() {
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState<VendorApplicationStatus | "all">("all");
   const [selected, setSelected] = useState<VendorRow | null>(null);
+  const { data: realBoothAssignment } = useVendorBoothAssignment(
+    selected?.isLive ? selected.id : undefined,
+  );
 
   const rows: VendorRow[] = useMemo(() => {
     if (vendors && vendors.length > 0) return buildLiveVendorRows(vendors);
@@ -473,7 +477,13 @@ function VendorsPage() {
                 </div>
                 <div className="flex justify-between border-b border-border py-2.5 text-[13px]">
                   <span className="text-muted-foreground">Booth</span>
-                  <span className="font-semibold text-foreground">{selected.booth}</span>
+                  <span className="font-semibold text-foreground">
+                    {selected.isLive
+                      ? realBoothAssignment
+                        ? `${realBoothAssignment.boothCode} · ${realBoothAssignment.marketName}`
+                        : "Not assigned yet"
+                      : selected.booth}
+                  </span>
                 </div>
                 <div className="flex justify-between gap-4 border-b border-border py-2.5 text-[13px]">
                   <span className="shrink-0 text-muted-foreground">Certification</span>
@@ -487,20 +497,27 @@ function VendorsPage() {
                 <p className="mb-2 mt-4 text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Onboarding checklist
                 </p>
-                {CHECKLIST_LABELS.map((label, i) => (
-                  <div key={label} className="flex items-center gap-2.5 py-1.5 text-[13px]">
-                    <span
-                      className={`flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border text-[10px] ${
-                        selected.checklist[i]
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border"
-                      }`}
-                    >
-                      {selected.checklist[i] ? "✓" : ""}
-                    </span>
-                    {label}
-                  </div>
-                ))}
+                {CHECKLIST_LABELS.map((label, i) => {
+                  const isBoothStep = i === CHECKLIST_LABELS.length - 1;
+                  const checked =
+                    selected.isLive && isBoothStep
+                      ? Boolean(realBoothAssignment)
+                      : selected.checklist[i];
+                  return (
+                    <div key={label} className="flex items-center gap-2.5 py-1.5 text-[13px]">
+                      <span
+                        className={`flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border text-[10px] ${
+                          checked
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border"
+                        }`}
+                      >
+                        {checked ? "✓" : ""}
+                      </span>
+                      {label}
+                    </div>
+                  );
+                })}
 
                 {selected.isLive && <VendorProductsSection vendorId={selected.id} />}
 

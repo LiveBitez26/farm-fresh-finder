@@ -767,3 +767,33 @@ export function useDeleteBooth() {
     },
   });
 }
+
+/** A vendor's most recent real booth assignment (if any), for showing
+ * accurate booth/onboarding-checklist status in the Vendor Management
+ * drawer instead of a guess. */
+export function useVendorBoothAssignment(vendorId: string | undefined) {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["vendor_booth_assignment", organizationId, vendorId],
+    enabled: Boolean(organizationId && vendorId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booth_assignments")
+        .select("*, booths(code, markets(name))")
+        .eq("organization_id", organizationId)
+        .eq("vendor_id", vendorId)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      type Row = {
+        booths: { code: string; markets: { name: string } | null } | null;
+      };
+      const row = data as Row;
+      return {
+        boothCode: row.booths?.code ?? null,
+        marketName: row.booths?.markets?.name ?? null,
+      };
+    },
+  });
+}
