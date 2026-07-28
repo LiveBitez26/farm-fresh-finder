@@ -1,8 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Settings2, X } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../../components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -15,6 +24,11 @@ import {
   useAssignVendorToBooth,
   useBoothAssignmentsForSchedule,
   useBoothsForMarket,
+  useCreateBooth,
+  useCreateMarket,
+  useCreateSchedule,
+  useDeleteBooth,
+  useMarkets,
   useSchedules,
   useVendors,
 } from "../../../hooks/use-organization-data";
@@ -23,7 +37,6 @@ export const Route = createFileRoute("/organizer/_layout/schedule")({
   component: SchedulePage,
 });
 
-// ---- Mock fallback (preview mode / before any markets exist) ----
 type DayKey = "Sat" | "Tue" | "Fest";
 
 const MOCK_DAYS: {
@@ -145,6 +158,210 @@ function formatEventDate(dateStr: string) {
   });
 }
 
+function NewScheduleDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { data: markets } = useMarkets();
+  const createMarket = useCreateMarket();
+  const createSchedule = useCreateSchedule();
+
+  const [marketId, setMarketId] = useState<string>("");
+  const [newMarketName, setNewMarketName] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("13:00");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (markets && markets.length > 0 && !marketId) setMarketId(markets[0].id);
+  }, [markets, marketId]);
+
+  const needsNewMarket = markets && markets.length === 0;
+
+  async function handleSubmit() {
+    setError(null);
+    let targetMarketId = marketId;
+
+    if (needsNewMarket) {
+      if (!newMarketName.trim()) {
+        setError("Enter a market name.");
+        return;
+      }
+      const market = await createMarket.mutateAsync({ name: newMarketName.trim() });
+      targetMarketId = market.id;
+    }
+
+    if (!targetMarketId || !eventDate) {
+      setError("Choose a market and a date.");
+      return;
+    }
+
+    createSchedule.mutate(
+      { marketId: targetMarketId, eventDate, startTime, endTime },
+      {
+        onSuccess: () => {
+          onOpenChange(false);
+          setEventDate("");
+          setNewMarketName("");
+        },
+        onError: (e: Error) => setError(e.message),
+      },
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-[family-name:var(--font-display)]">
+            New Market Date
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          {needsNewMarket ? (
+            <div className="space-y-1.5">
+              <Label>Market name</Label>
+              <Input
+                value={newMarketName}
+                onChange={(e) => setNewMarketName(e.target.value)}
+                placeholder="Downtown Saturday Market"
+              />
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label>Market</Label>
+              <Select value={marketId} onValueChange={setMarketId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a market" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(markets ?? []).map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <Label>Date</Label>
+            <Input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex-1 space-y-1.5">
+              <Label>Start time</Label>
+              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <Label>End time</Label>
+              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
+
+        <DialogFooter>
+          <Button
+            onClick={handleSubmit}
+            disabled={createMarket.isPending || createSchedule.isPending}
+          >
+            {(createMarket.isPending || createSchedule.isPending) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Create
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function BoothLayoutDialog({
+  open,
+  onOpenChange,
+  marketId,
+  marketName,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  marketId: string | undefined;
+  marketName: string | undefined;
+}) {
+  const { data: booths, isLoading } = useBoothsForMarket(marketId);
+  const createBooth = useCreateBooth();
+  const deleteBooth = useDeleteBooth();
+  const [newCode, setNewCode] = useState("");
+
+  function handleAdd() {
+    if (!marketId || !newCode.trim()) return;
+    createBooth.mutate(
+      { marketId, code: newCode.trim().toUpperCase() },
+      { onSuccess: () => setNewCode("") },
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-[family-name:var(--font-display)]">
+            Booth Layout — {marketName}
+          </DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">Loading…</p>
+        ) : (
+          <div className="max-h-60 space-y-1.5 overflow-y-auto">
+            {(booths ?? []).map((b) => (
+              <div
+                key={b.id}
+                className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-1.5 text-sm"
+              >
+                <span className="font-mono">{b.code}</span>
+                <button
+                  onClick={() => deleteBooth.mutate(b.id)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            {(booths ?? []).length === 0 && (
+              <p className="py-2 text-center text-sm text-muted-foreground">No booths yet.</p>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2 pt-2">
+          <Input
+            value={newCode}
+            onChange={(e) => setNewCode(e.target.value)}
+            placeholder="e.g. C01"
+            className="flex-1"
+          />
+          <Button onClick={handleAdd} disabled={createBooth.isPending}>
+            {createBooth.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function SchedulePage() {
   const { profile } = useAuth();
   const hasOrg = Boolean(profile?.organization_id);
@@ -152,6 +369,8 @@ function SchedulePage() {
   const { data: schedules, isLoading: schedulesLoading } = useSchedules();
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
   const [mockDay, setMockDay] = useState<DayKey>("Sat");
+  const [newScheduleOpen, setNewScheduleOpen] = useState(false);
+  const [boothLayoutOpen, setBoothLayoutOpen] = useState(false);
 
   const selectedSchedule = schedules?.find((s) => s.id === selectedScheduleId) ?? schedules?.[0];
 
@@ -170,6 +389,10 @@ function SchedulePage() {
 
   const hasLiveData = hasOrg && schedules && schedules.length > 0;
 
+  const newScheduleDialog = hasOrg && (
+    <NewScheduleDialog open={newScheduleOpen} onOpenChange={setNewScheduleOpen} />
+  );
+
   if (hasOrg && schedulesLoading) {
     return (
       <div className="flex items-center justify-center gap-2 p-16 text-sm text-muted-foreground">
@@ -182,31 +405,46 @@ function SchedulePage() {
   if (hasOrg && (!schedules || schedules.length === 0)) {
     return (
       <div>
-        <div className="mb-5">
-          <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
-            Schedule & Booth Map
-          </h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">No markets scheduled yet</p>
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
+              Schedule & Booth Map
+            </h1>
+            <p className="mt-0.5 text-xs text-muted-foreground">No markets scheduled yet</p>
+          </div>
+          <Button onClick={() => setNewScheduleOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Market Date
+          </Button>
         </div>
         <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-          Use "Load sample data" on the Overview page to generate a market with scheduled dates,
-          booths, and vendor assignments.
+          Create your first scheduled market date above, or use "Load sample data" on the Overview
+          page to generate one automatically.
         </p>
+        {newScheduleDialog}
       </div>
     );
   }
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
-          Schedule & Booth Map
-        </h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {hasLiveData
-            ? `${schedules!.length} scheduled dates`
-            : `${MOCK_DAYS.length} upcoming markets`}
-        </p>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
+            Schedule & Booth Map
+          </h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {hasLiveData
+              ? `${schedules!.length} scheduled dates`
+              : `${MOCK_DAYS.length} upcoming markets`}
+          </p>
+        </div>
+        {hasOrg && (
+          <Button onClick={() => setNewScheduleOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Market Date
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.3fr]">
@@ -305,7 +543,17 @@ function SchedulePage() {
                   : MOCK_DAYS.find((d) => d.key === mockDay)?.name}
               </span>
             </h3>
-            {!hasLiveData && (
+            {hasLiveData ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-border"
+                onClick={() => setBoothLayoutOpen(true)}
+              >
+                <Settings2 className="mr-2 h-3.5 w-3.5" />
+                Edit layout
+              </Button>
+            ) : (
               <Button size="sm" variant="outline" className="border-border">
                 Save layout
               </Button>
@@ -362,6 +610,11 @@ function SchedulePage() {
                   </div>
                 );
               })}
+              {(booths ?? []).length === 0 && (
+                <p className="col-span-full py-6 text-center text-sm text-muted-foreground">
+                  No booths yet — click "Edit layout" to add some.
+                </p>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-8 gap-2.5">
@@ -409,6 +662,16 @@ function SchedulePage() {
           </div>
         </div>
       </div>
+
+      {newScheduleDialog}
+      {hasLiveData && (
+        <BoothLayoutDialog
+          open={boothLayoutOpen}
+          onOpenChange={setBoothLayoutOpen}
+          marketId={selectedSchedule?.marketId}
+          marketName={selectedSchedule?.marketName}
+        />
+      )}
     </div>
   );
 }

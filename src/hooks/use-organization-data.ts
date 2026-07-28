@@ -656,3 +656,114 @@ export function useToggleProductActive() {
     },
   });
 }
+
+/** All markets belonging to the org (for pickers / market management). */
+export function useMarkets() {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["markets", organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("markets")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (
+        (data as { id: string; name: string; city: string | null; market_type: string | null }[]) ??
+        []
+      );
+    },
+  });
+}
+
+/** Create a new market. */
+export function useCreateMarket() {
+  const organizationId = useOrganizationId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { name: string; city?: string; marketType?: string }) => {
+      if (!organizationId) throw new Error("No organization");
+      const { data, error } = await supabase
+        .from("markets")
+        .insert({
+          organization_id: organizationId,
+          name: input.name,
+          city: input.city || null,
+          market_type: input.marketType || null,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["markets"] });
+    },
+  });
+}
+
+/** Create a new scheduled market date. */
+export function useCreateSchedule() {
+  const organizationId = useOrganizationId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      marketId: string;
+      eventDate: string;
+      startTime: string;
+      endTime: string;
+    }) => {
+      if (!organizationId) throw new Error("No organization");
+      const { error } = await supabase.from("schedules").insert({
+        organization_id: organizationId,
+        market_id: input.marketId,
+        event_date: input.eventDate,
+        start_time: input.startTime,
+        end_time: input.endTime,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming_schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["overview_metrics"] });
+    },
+  });
+}
+
+/** Add a booth to a market's layout. */
+export function useCreateBooth() {
+  const organizationId = useOrganizationId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { marketId: string; code: string }) => {
+      if (!organizationId) throw new Error("No organization");
+      const { error } = await supabase.from("booths").insert({
+        organization_id: organizationId,
+        market_id: input.marketId,
+        code: input.code,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booths"] });
+    },
+  });
+}
+
+/** Remove a booth from a market's layout. */
+export function useDeleteBooth() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (boothId: string) => {
+      const { error } = await supabase.from("booths").delete().eq("id", boothId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booths"] });
+      queryClient.invalidateQueries({ queryKey: ["booth_assignments"] });
+    },
+  });
+}
