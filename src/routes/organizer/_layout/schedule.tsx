@@ -178,15 +178,16 @@ function NewScheduleDialog({
 
   useEffect(() => {
     if (markets && markets.length > 0 && !marketId) setMarketId(markets[0].id);
+    if (markets && markets.length === 0 && !marketId) setMarketId("__new__");
   }, [markets, marketId]);
 
-  const needsNewMarket = markets && markets.length === 0;
+  const isCreatingNewMarket = marketId === "__new__";
 
   async function handleSubmit() {
     setError(null);
     let targetMarketId = marketId;
 
-    if (needsNewMarket) {
+    if (isCreatingNewMarket) {
       if (!newMarketName.trim()) {
         setError("Enter a market name.");
         return;
@@ -207,6 +208,7 @@ function NewScheduleDialog({
           onOpenChange(false);
           setEventDate("");
           setNewMarketName("");
+          setMarketId(targetMarketId);
         },
         onError: (e: Error) => setError(e.message),
       },
@@ -223,16 +225,7 @@ function NewScheduleDialog({
         </DialogHeader>
 
         <div className="space-y-3">
-          {needsNewMarket ? (
-            <div className="space-y-1.5">
-              <Label>Market name</Label>
-              <Input
-                value={newMarketName}
-                onChange={(e) => setNewMarketName(e.target.value)}
-                placeholder="Downtown Saturday Market"
-              />
-            </div>
-          ) : (
+          {markets && markets.length > 0 && (
             <div className="space-y-1.5">
               <Label>Market</Label>
               <Select value={marketId} onValueChange={setMarketId}>
@@ -240,13 +233,30 @@ function NewScheduleDialog({
                   <SelectValue placeholder="Choose a market" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(markets ?? []).map((m) => (
+                  {markets.map((m) => (
                     <SelectItem key={m.id} value={m.id}>
                       {m.name}
                     </SelectItem>
                   ))}
+                  <SelectItem value="__new__">+ Add a new market…</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {isCreatingNewMarket && (
+            <div className="space-y-1.5">
+              <Label>{markets && markets.length > 0 ? "New market name" : "Market name"}</Label>
+              <Input
+                value={newMarketName}
+                onChange={(e) => setNewMarketName(e.target.value)}
+                placeholder="Downtown Saturday Market"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                A market is one specific location/day your organization runs — you can add more than
+                one.
+              </p>
             </div>
           )}
 
