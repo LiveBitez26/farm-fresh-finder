@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as ApplySlugRouteImport } from './routes/apply.$slug'
 import { Route as OrganizerLayoutRouteImport } from './routes/organizer/_layout'
 import { Route as VendorLayoutRouteImport } from './routes/vendor/_layout'
 import { Route as OrganizerLayoutIndexRouteImport } from './routes/organizer/_layout/index'
@@ -41,6 +42,11 @@ const LoginRoute = LoginRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplySlugRoute = ApplySlugRouteImport.update({
+  id: '/apply/$slug',
+  path: '/apply/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizerLayoutRoute = OrganizerLayoutRouteImport.update({
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/apply/$slug': typeof ApplySlugRoute
   '/organizer': typeof OrganizerLayoutRouteWithChildren
   '/vendor': typeof VendorLayoutRouteWithChildren
   '/organizer/analytics': typeof OrganizerLayoutAnalyticsRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/apply/$slug': typeof ApplySlugRoute
   '/organizer/analytics': typeof OrganizerLayoutAnalyticsRoute
   '/organizer/communications': typeof OrganizerLayoutCommunicationsRoute
   '/organizer/compliance': typeof OrganizerLayoutComplianceRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/apply/$slug': typeof ApplySlugRoute
   '/organizer/_layout': typeof OrganizerLayoutRouteWithChildren
   '/vendor/_layout': typeof VendorLayoutRouteWithChildren
   '/organizer/_layout/analytics': typeof OrganizerLayoutAnalyticsRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
+    | '/apply/$slug'
     | '/organizer'
     | '/vendor'
     | '/organizer/analytics'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
+    | '/apply/$slug'
     | '/organizer/analytics'
     | '/organizer/communications'
     | '/organizer/compliance'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
+    | '/apply/$slug'
     | '/organizer/_layout'
     | '/vendor/_layout'
     | '/organizer/_layout/analytics'
@@ -246,6 +258,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  ApplySlugRoute: typeof ApplySlugRoute
   OrganizerLayoutRoute: typeof OrganizerLayoutRouteWithChildren
   VendorLayoutRoute: typeof VendorLayoutRouteWithChildren
   VendorClaimVendorIdRoute: typeof VendorClaimVendorIdRoute
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apply/$slug': {
+      id: '/apply/$slug'
+      path: '/apply/$slug'
+      fullPath: '/apply/$slug'
+      preLoaderRoute: typeof ApplySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizer/_layout': {
@@ -430,6 +450,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  ApplySlugRoute: ApplySlugRoute,
   OrganizerLayoutRoute: OrganizerLayoutRouteWithChildren,
   VendorLayoutRoute: VendorLayoutRouteWithChildren,
   VendorClaimVendorIdRoute: VendorClaimVendorIdRoute,

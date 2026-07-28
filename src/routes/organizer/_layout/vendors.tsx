@@ -377,6 +377,7 @@ function VendorsPage() {
   const [stage, setStage] = useState<VendorApplicationStatus | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
+  const [copiedApplyLink, setCopiedApplyLink] = useState(false);
   const updateChecklist = useUpdateVendorChecklist();
 
   const rows: VendorRow[] = useMemo(() => {
@@ -405,13 +406,29 @@ function VendorsPage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
-          Vendor Management
-        </h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {rows.length} active · {pendingCount} in onboarding
-        </p>
+      <div className="mb-5 flex items-center justify-between">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
+            Vendor Management
+          </h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {rows.length} active · {pendingCount} in onboarding
+          </p>
+        </div>
+        {hasOrg && organization && (
+          <Button
+            variant="outline"
+            className="border-border"
+            onClick={() => {
+              const url = `${window.location.origin}/apply/${organization.slug}`;
+              navigator.clipboard.writeText(url);
+              setCopiedApplyLink(true);
+              setTimeout(() => setCopiedApplyLink(false), 2000);
+            }}
+          >
+            {copiedApplyLink ? "Copied!" : "Copy Application Link"}
+          </Button>
+        )}
       </div>
 
       <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2.5">
