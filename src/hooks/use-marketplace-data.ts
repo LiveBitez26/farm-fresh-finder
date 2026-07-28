@@ -95,3 +95,20 @@ export function usePublicVendorProducts(vendorId: string | undefined) {
     },
   });
 }
+
+/** Active organizations, for the marketplace's 'Apply to sell here'
+ * links — organization name/slug are public directory info. */
+export function usePublicOrganizations() {
+  return useQuery({
+    queryKey: ["marketplace_organizations"],
+    queryFn: async (): Promise<{ id: string; name: string; slug: string }[]> => {
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("id, name, slug")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Package, CalendarDays, ShieldCheck } from "lucide-react";
+import { Loader2, Package, CalendarDays, ShieldCheck, ExternalLink } from "lucide-react";
+import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
 import { TicketCard } from "../../../components/organizer/ticket-card";
 import { formatMoney } from "../../../lib/currency";
@@ -51,13 +52,23 @@ function VendorOverviewPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
-          Welcome back, {vendor?.business_name}
-        </h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Here's what's happening with your listing.
-        </p>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
+            Welcome back, {vendor?.business_name}
+          </h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Here's what's happening with your listing.
+          </p>
+        </div>
+        {vendor && (
+          <Button variant="outline" className="border-border" asChild>
+            <a href={`/store/${vendor.id}`} target="_blank" rel="noreferrer">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              View My Storefront
+            </a>
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">

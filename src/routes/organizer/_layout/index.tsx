@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { FileBarChart, Flag, Mail, X, Sparkles, Loader2 } from "lucide-react";
+import { FileBarChart, Flag, Mail, X, Sparkles, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
@@ -283,6 +283,12 @@ function OverviewPage() {
             <Link to="/organizer/communications">
               <Mail className="h-4 w-4" />
             </Link>
+          </Button>
+          <Button variant="outline" className="border-border bg-card" asChild>
+            <a href="/" target="_blank" rel="noreferrer">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              View Live Marketplace
+            </a>
           </Button>
           <Button onClick={() => setReportOpen(true)}>
             <FileBarChart className="mr-2 h-4 w-4" />

@@ -13,6 +13,8 @@ import {
   Loader2,
   ImageOff,
   Repeat,
+  LogIn,
+  ChevronRight,
 } from "lucide-react";
 import { formatMoney } from "../lib/currency";
 import {
@@ -21,6 +23,7 @@ import {
   usePublicMarketVendors,
   usePublicVendor,
   usePublicVendorProducts,
+  usePublicOrganizations,
 } from "../hooks/use-marketplace-data";
 import type { Product } from "../lib/types";
 
@@ -598,15 +601,69 @@ function CartScreen({ count }: { count: number }) {
 }
 
 function ProfileScreen() {
+  const { data: organizations } = usePublicOrganizations();
+
   return (
-    <div className="px-5 pt-16 text-center">
-      <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary">
-        <UserIcon className="h-7 w-7" />
+    <div className="px-5 pt-16">
+      <div className="text-center">
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <UserIcon className="h-7 w-7" />
+        </div>
+        <h1 className="mt-4 font-display text-2xl font-semibold">Your Profile</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Manage subscriptions, delivery addresses, and farmer favorites.
+        </p>
       </div>
-      <h1 className="mt-4 font-display text-2xl font-semibold">Your Profile</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Manage subscriptions, delivery addresses, and farmer favorites.
-      </p>
+
+      <div className="mx-auto mt-8 max-w-sm space-y-3">
+        <a
+          href="/login"
+          className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm transition hover:bg-secondary"
+        >
+          <span className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-secondary text-primary">
+              <LogIn className="h-4 w-4" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold">Market Organizer or Vendor?</span>
+              <span className="block text-[11px] text-muted-foreground">
+                Sign in to your console
+              </span>
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </a>
+
+        {organizations && organizations.length > 0 && (
+          <div>
+            <p className="mb-2 mt-6 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Are you a farmer?
+            </p>
+            {organizations.map((org) => (
+              <a
+                key={org.id}
+                href={`/apply/${org.slug}`}
+                className="mb-2 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm transition hover:bg-secondary"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
+                    <Leaf className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold">
+                      Apply to sell with {org.name}
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground">
+                      Submit a vendor application
+                    </span>
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
