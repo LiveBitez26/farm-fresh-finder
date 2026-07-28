@@ -27,6 +27,7 @@ export type DocumentStatus =
   "pending_review" | "verified" | "expiring_soon" | "expired" | "update_requested" | "rejected";
 
 export type AttendanceStatus = "attending" | "absent" | "late";
+export type SubscriptionFrequency = "weekly" | "biweekly" | "monthly";
 export type OrderStatus =
   | "pending"
   | "confirmed"
@@ -182,7 +183,9 @@ export interface Product {
   currency: string;
   unit: string | null;
   photo_url: string | null;
+  photo_urls: string[] | null;
   is_subscription_eligible: boolean;
+  subscription_frequencies: SubscriptionFrequency[] | null;
   is_active: boolean;
 }
 

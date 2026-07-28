@@ -118,36 +118,43 @@ export function useCreateMyProduct() {
       vendorId: string;
       organizationId: string;
       name: string;
+      description: string;
       category: string;
       price: number;
       unit: string;
       currency: string;
       isSubscriptionEligible: boolean;
-      photoFile?: File;
+      subscriptionFrequencies: ("weekly" | "biweekly" | "monthly")[];
+      photoFiles: File[];
     }) => {
-      let photoUrl: string | null = null;
-      if (input.photoFile) {
-        const path = `${input.vendorId}/${Date.now()}-${input.photoFile.name}`;
+      const photoUrls: string[] = [];
+      for (const file of input.photoFiles) {
+        const path = `${input.vendorId}/${Date.now()}-${file.name}`;
         const { error: uploadError } = await supabase.storage
           .from("product-photos")
-          .upload(path, input.photoFile);
+          .upload(path, file);
         if (uploadError) throw uploadError;
         const {
           data: { publicUrl },
         } = supabase.storage.from("product-photos").getPublicUrl(path);
-        photoUrl = publicUrl;
+        photoUrls.push(publicUrl);
       }
 
       const { error } = await supabase.from("products").insert({
         organization_id: input.organizationId,
         vendor_id: input.vendorId,
         name: input.name,
+        description: input.description || null,
         category: input.category || null,
         price: input.price,
         currency: input.currency,
         unit: input.unit || null,
         is_subscription_eligible: input.isSubscriptionEligible,
-        photo_url: photoUrl,
+        subscription_frequencies: input.isSubscriptionEligible
+          ? input.subscriptionFrequencies
+          : null,
+        photo_url: photoUrls[0] ?? null,
+        photo_urls: photoUrls.length ? photoUrls : null,
         is_active: true,
       });
       if (error) throw error;
