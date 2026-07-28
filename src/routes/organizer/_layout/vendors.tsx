@@ -24,6 +24,7 @@ import {
   useCreateProduct,
   useProductsForVendor,
   useToggleProductActive,
+  useUpdateVendorChecklist,
   useVendorApplications,
   useVendorBoothAssignment,
   useVendors,
@@ -48,6 +49,7 @@ type VendorRow = {
   farmLocation?: string;
   website?: string;
   farmingPractices?: string;
+  vendorData?: Vendor;
 };
 
 const CHECKLIST_LABELS = [
@@ -58,6 +60,16 @@ const CHECKLIST_LABELS = [
   "Fees paid",
   "Booth assigned",
 ];
+
+const EDITABLE_CHECKLIST_FIELDS: Record<
+  number,
+  "insurance_uploaded" | "permit_verified" | "agreement_signed" | "fees_paid"
+> = {
+  1: "insurance_uploaded",
+  2: "permit_verified",
+  3: "agreement_signed",
+  4: "fees_paid",
+};
 
 const STAGES: { key: VendorApplicationStatus | "all"; label: string }[] = [
   { key: "all", label: "All" },
@@ -226,6 +238,7 @@ function buildLiveVendorRows(vendors: Vendor[]): VendorRow[] {
     farmLocation: v.farm_location ?? undefined,
     website: v.website ?? undefined,
     farmingPractices: (v.farming_practices ?? []).join(", ") || undefined,
+    vendorData: v,
   }));
 }
 
@@ -351,16 +364,19 @@ function VendorsPage() {
   const { data: applications } = useVendorApplications();
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState<VendorApplicationStatus | "all">("all");
-  const [selected, setSelected] = useState<VendorRow | null>(null);
-  const { data: realBoothAssignment } = useVendorBoothAssignment(
-    selected?.isLive ? selected.id : undefined,
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const updateChecklist = useUpdateVendorChecklist();
 
   const rows: VendorRow[] = useMemo(() => {
     if (vendors && vendors.length > 0) return buildLiveVendorRows(vendors);
     if (hasOrg) return [];
     return MOCK_VENDORS;
   }, [vendors, hasOrg]);
+
+  const selected = rows.find((r) => r.id === selectedId) ?? null;
+  const { data: realBoothAssignment } = useVendorBoothAssignment(
+    selected?.isLive ? selected.id : undefined,
+  );
 
   const filtered = rows.filter((r) => {
     const matchesStage = stage === "all" || r.stage === stage;
@@ -434,7 +450,7 @@ function VendorsPage() {
                 <TableRow
                   key={row.id}
                   className="cursor-pointer hover:bg-moss-soft/60"
-                  onClick={() => setSelected(row)}
+                  onClick={() => setSelectedId(row.id)}
                 >
                   <TableCell>
                     <div className="flex items-center gap-2.5 font-semibold text-foreground">
@@ -462,7 +478,7 @@ function VendorsPage() {
         )}
       </div>
 
-      <Sheet open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
+      <Sheet open={Boolean(selected)} onOpenChange={(open) => !open && setSelectedId(null)}>
         <SheetContent className="w-full max-w-md overflow-y-auto bg-background">
           {selected && (
             <>
@@ -541,12 +557,36 @@ function VendorsPage() {
                 </p>
                 {CHECKLIST_LABELS.map((label, i) => {
                   const isBoothStep = i === CHECKLIST_LABELS.length - 1;
+                  const editableField = EDITABLE_CHECKLIST_FIELDS[i];
+                  const isEditable =
+                    selected.isLive && Boolean(editableField) && Boolean(selected.vendorData);
+
                   const checked =
                     selected.isLive && isBoothStep
                       ? Boolean(realBoothAssignment)
-                      : selected.checklist[i];
+                      : isEditable
+                        ? selected.vendorData![editableField]
+                        : selected.checklist[i];
+
+                  const toggle = () => {
+                    if (!isEditable || !selected.vendorData) return;
+                    updateChecklist.mutate({
+                      vendorId: selected.id,
+                      field: editableField,
+                      value: !selected.vendorData[editableField],
+                    });
+                  };
+
                   return (
-                    <div key={label} className="flex items-center gap-2.5 py-1.5 text-[13px]">
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={toggle}
+                      disabled={!isEditable}
+                      className={`flex w-full items-center gap-2.5 py-1.5 text-left text-[13px] ${
+                        isEditable ? "cursor-pointer hover:text-primary" : "cursor-default"
+                      }`}
+                    >
                       <span
                         className={`flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[5px] border text-[10px] ${
                           checked
@@ -557,7 +597,10 @@ function VendorsPage() {
                         {checked ? "✓" : ""}
                       </span>
                       {label}
-                    </div>
+                      {isBoothStep && selected.isLive && (
+                        <span className="ml-auto text-[10.5px] text-muted-foreground">auto</span>
+                      )}
+                    </button>
                   );
                 })}
 

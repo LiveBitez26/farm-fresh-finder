@@ -768,6 +768,32 @@ export function useDeleteBooth() {
   });
 }
 
+/** Toggle one onboarding-checklist field on a vendor
+ * (insurance_uploaded / permit_verified / agreement_signed / fees_paid). */
+export function useUpdateVendorChecklist() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      vendorId,
+      field,
+      value,
+    }: {
+      vendorId: string;
+      field: "insurance_uploaded" | "permit_verified" | "agreement_signed" | "fees_paid";
+      value: boolean;
+    }) => {
+      const { error } = await supabase
+        .from("vendors")
+        .update({ [field]: value })
+        .eq("id", vendorId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vendors"] });
+    },
+  });
+}
+
 /** A vendor's most recent real booth assignment (if any), for showing
  * accurate booth/onboarding-checklist status in the Vendor Management
  * drawer instead of a guess. */

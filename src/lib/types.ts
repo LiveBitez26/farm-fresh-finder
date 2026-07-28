@@ -96,6 +96,10 @@ export interface Vendor {
   website: string | null;
   photos: string[] | null;
   farming_practices: string[] | null;
+  insurance_uploaded: boolean;
+  permit_verified: boolean;
+  agreement_signed: boolean;
+  fees_paid: boolean;
   status: "pending" | "active" | "suspended" | "inactive";
   created_at: string;
   updated_at: string;
