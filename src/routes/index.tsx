@@ -559,7 +559,7 @@ function ProductCard({ product, onSubscribe }: { product: Product; onSubscribe: 
           Subscribe
         </button>
         <p className="mt-2 text-center text-[10px] text-muted-foreground">
-          Pause or cancel anytime • Pickup or delivery
+          Pause or cancel anytime • Pickup at the farm
         </p>
       </div>
     </div>
