@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, ChevronRight } from "lucide-react";
+import { Search, ChevronRight, Loader2, Plus } from "lucide-react";
 import { Input } from "../../../components/ui/input";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
@@ -20,7 +20,13 @@ import {
   SheetDescription,
 } from "../../../components/ui/sheet";
 import { useAuth } from "../../../hooks/use-auth";
-import { useVendorApplications, useVendors } from "../../../hooks/use-organization-data";
+import {
+  useCreateProduct,
+  useProductsForVendor,
+  useToggleProductActive,
+  useVendorApplications,
+  useVendors,
+} from "../../../hooks/use-organization-data";
 import type { Vendor, VendorApplicationStatus } from "../../../lib/types";
 
 export const Route = createFileRoute("/organizer/_layout/vendors")({
@@ -37,6 +43,7 @@ type VendorRow = {
   story: string;
   cert: string;
   checklist: boolean[];
+  isLive: boolean;
 };
 
 const CHECKLIST_LABELS = [
@@ -79,6 +86,7 @@ const MOCK_VENDORS: VendorRow[] = [
       "Family-run vegetable farm using regenerative growing practices on 40 acres outside town.",
     cert: "USDA Organic — expires Mar 2027",
     checklist: [true, true, true, true, true, true],
+    isLive: false,
   },
   {
     id: "2",
@@ -90,6 +98,7 @@ const MOCK_VENDORS: VendorRow[] = [
     story: "Small-batch raw honey and fruit preserves from a third-generation apiary.",
     cert: "Food Handler's Permit — expires Aug 6",
     checklist: [true, true, true, true, true, true],
+    isLive: false,
   },
   {
     id: "3",
@@ -101,6 +110,7 @@ const MOCK_VENDORS: VendorRow[] = [
     story: "Grass-fed dairy producing raw milk cheese and cultured butter.",
     cert: "Liability Insurance — expires Aug 9",
     checklist: [true, true, true, true, true, true],
+    isLive: false,
   },
   {
     id: "4",
@@ -112,6 +122,7 @@ const MOCK_VENDORS: VendorRow[] = [
     story: "Sourdough and pastries baked fresh each market morning with local grain.",
     cert: "Health Dept. Inspection — expires Jul 16",
     checklist: [true, true, true, true, true, true],
+    isLive: false,
   },
   {
     id: "5",
@@ -123,6 +134,7 @@ const MOCK_VENDORS: VendorRow[] = [
     story: "Heirloom apple and pear orchard, third season selling direct to market.",
     cert: "Business License — verified",
     checklist: [true, true, true, true, false, false],
+    isLive: false,
   },
   {
     id: "6",
@@ -134,6 +146,7 @@ const MOCK_VENDORS: VendorRow[] = [
     story: "Backyard beekeeping operation expanding to its first farmers market.",
     cert: "Insurance — under review",
     checklist: [true, true, true, false, false, false],
+    isLive: false,
   },
   {
     id: "7",
@@ -145,6 +158,7 @@ const MOCK_VENDORS: VendorRow[] = [
     story: "Small-batch kraut, kimchi, and hot sauce made with local produce.",
     cert: "Permit — pending upload",
     checklist: [true, true, false, false, false, false],
+    isLive: false,
   },
   {
     id: "8",
@@ -156,6 +170,7 @@ const MOCK_VENDORS: VendorRow[] = [
     story: "Dried culinary and medicinal herb blends grown on a half-acre plot.",
     cert: "Awaiting documents",
     checklist: [true, false, false, false, false, false],
+    isLive: false,
   },
   {
     id: "9",
@@ -167,6 +182,7 @@ const MOCK_VENDORS: VendorRow[] = [
     story: "Hand-spun wool and knitwear from a small sheep flock.",
     cert: "No documents yet",
     checklist: [true, false, false, false, false, false],
+    isLive: false,
   },
 ];
 
@@ -202,7 +218,122 @@ function buildLiveVendorRows(vendors: Vendor[]): VendorRow[] {
     story: v.farm_story ?? "No farm story added yet.",
     cert: "See Compliance Vault for documents",
     checklist: [true, false, false, false, v.status === "active", false],
+    isLive: true,
   }));
+}
+
+function VendorProductsSection({ vendorId }: { vendorId: string }) {
+  const { data: products, isLoading } = useProductsForVendor(vendorId);
+  const createProduct = useCreateProduct();
+  const toggleActive = useToggleProductActive();
+
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [price, setPrice] = useState("");
+  const [unit, setUnit] = useState("");
+
+  function handleAdd() {
+    const parsedPrice = Number(price);
+    if (!name.trim() || Number.isNaN(parsedPrice)) return;
+    createProduct.mutate(
+      {
+        vendorId,
+        name: name.trim(),
+        category: category.trim(),
+        price: parsedPrice,
+        unit: unit.trim(),
+      },
+      {
+        onSuccess: () => {
+          setName("");
+          setCategory("");
+          setPrice("");
+          setUnit("");
+          setShowForm(false);
+        },
+      },
+    );
+  }
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between">
+        <p className="text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Products
+        </p>
+        <Button size="sm" variant="ghost" onClick={() => setShowForm((v) => !v)}>
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          Add
+        </Button>
+      </div>
+
+      {showForm && (
+        <div className="mt-2 space-y-2 rounded-lg border border-border bg-card p-3">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Product name"
+            className="h-8 text-xs"
+          />
+          <div className="flex gap-2">
+            <Input
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="Category"
+              className="h-8 text-xs"
+            />
+            <Input
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="Price"
+              type="number"
+              step="0.01"
+              className="h-8 w-20 text-xs"
+            />
+            <Input
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              placeholder="Unit (lb, dozen…)"
+              className="h-8 text-xs"
+            />
+          </div>
+          <Button size="sm" onClick={handleAdd} disabled={createProduct.isPending}>
+            {createProduct.isPending && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+            Save product
+          </Button>
+        </div>
+      )}
+
+      {isLoading ? (
+        <p className="py-3 text-center text-xs text-muted-foreground">Loading…</p>
+      ) : products && products.length > 0 ? (
+        products.map((p) => (
+          <div
+            key={p.id}
+            className="flex items-center justify-between border-b border-border py-2 text-[13px] last:border-b-0"
+          >
+            <div>
+              <p className="text-foreground">{p.name}</p>
+              <p className="text-[11.5px] text-muted-foreground">
+                {p.category ?? "—"} · ${p.price}
+                {p.unit ? ` / ${p.unit}` : ""}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => toggleActive.mutate({ productId: p.id, isActive: !p.is_active })}
+            >
+              {p.is_active ? "Active" : "Inactive"}
+            </Button>
+          </div>
+        ))
+      ) : (
+        <p className="py-3 text-center text-xs text-muted-foreground">No products yet.</p>
+      )}
+    </div>
+  );
 }
 
 function VendorsPage() {
@@ -370,6 +501,8 @@ function VendorsPage() {
                     {label}
                   </div>
                 ))}
+
+                {selected.isLive && <VendorProductsSection vendorId={selected.id} />}
 
                 <div className="mt-5 flex gap-2">
                   <Button>Message vendor</Button>

@@ -6,6 +6,7 @@ import type {
   DocumentStatus,
   DocumentType,
   Organization,
+  Product,
   Vendor,
   VendorApplication,
   VendorApplicationStatus,
@@ -367,6 +368,34 @@ export function useSeedDemoData() {
         await supabase.from("booth_assignments").insert(assignmentRows);
       }
 
+      // Sample products for the active vendors.
+      const productsByVendor: Record<
+        string,
+        { name: string; category: string; price: number; unit: string }[]
+      > = {
+        "Green Fields Farm": [
+          { name: "Heirloom Tomatoes", category: "Vegetables", price: 4.5, unit: "lb" },
+          { name: "Mixed Salad Greens", category: "Vegetables", price: 3.75, unit: "bag" },
+        ],
+        "Hilltop Honey Co.": [
+          { name: "Wildflower Honey", category: "Honey", price: 9.0, unit: "12oz jar" },
+        ],
+      };
+      const productRows = activeVendors.flatMap((v: { id: string; business_name: string }) =>
+        (productsByVendor[v.business_name] ?? []).map((p) => ({
+          organization_id: organizationId,
+          vendor_id: v.id,
+          name: p.name,
+          category: p.category,
+          price: p.price,
+          unit: p.unit,
+          is_active: true,
+        })),
+      );
+      if (productRows.length > 0) {
+        await supabase.from("products").insert(productRows);
+      }
+
       return { market, vendors };
     },
     onSuccess: () => {
@@ -378,6 +407,7 @@ export function useSeedDemoData() {
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
       queryClient.invalidateQueries({ queryKey: ["booths"] });
       queryClient.invalidateQueries({ queryKey: ["booth_assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 }
@@ -556,6 +586,73 @@ export function useSendAnnouncement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
+    },
+  });
+}
+
+/** Products belonging to a specific vendor (shown in the Vendor Management
+ * drawer's Products tab). */
+export function useProductsForVendor(vendorId: string | undefined) {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["products", organizationId, vendorId],
+    enabled: Boolean(organizationId && vendorId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .eq("vendor_id", vendorId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data as Product[]) ?? [];
+    },
+  });
+}
+
+/** Add a new product for a vendor. */
+export function useCreateProduct() {
+  const organizationId = useOrganizationId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      vendorId: string;
+      name: string;
+      category: string;
+      price: number;
+      unit: string;
+    }) => {
+      if (!organizationId) throw new Error("No organization");
+      const { error } = await supabase.from("products").insert({
+        organization_id: organizationId,
+        vendor_id: input.vendorId,
+        name: input.name,
+        category: input.category || null,
+        price: input.price,
+        unit: input.unit || null,
+        is_active: true,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+}
+
+/** Toggle a product's active/inactive listing state. */
+export function useToggleProductActive() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ productId, isActive }: { productId: string; isActive: boolean }) => {
+      const { error } = await supabase
+        .from("products")
+        .update({ is_active: isActive })
+        .eq("id", productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 }
