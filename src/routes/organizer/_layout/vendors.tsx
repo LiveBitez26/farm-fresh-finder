@@ -501,6 +501,7 @@ function VendorsPage() {
   const [stage, setStage] = useState<VendorApplicationStatus | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
+  const [copiedStorefrontId, setCopiedStorefrontId] = useState<string | null>(null);
   const [copiedApplyLink, setCopiedApplyLink] = useState(false);
   const updateChecklist = useUpdateVendorChecklist();
 
@@ -802,6 +803,20 @@ function VendorsPage() {
                     <Badge variant="secondary" className="self-center">
                       Vendor Portal linked
                     </Badge>
+                  )}
+                  {selected.isLive && (
+                    <Button
+                      variant="outline"
+                      className="border-border"
+                      onClick={() => {
+                        const url = `${window.location.origin}/store/${selected.id}`;
+                        navigator.clipboard.writeText(url);
+                        setCopiedStorefrontId(selected.id);
+                        setTimeout(() => setCopiedStorefrontId(null), 2000);
+                      }}
+                    >
+                      {copiedStorefrontId === selected.id ? "Copied!" : "Copy Storefront Link"}
+                    </Button>
                   )}
                 </div>
               </div>

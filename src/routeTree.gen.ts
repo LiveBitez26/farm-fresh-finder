@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ApplySlugRouteImport } from './routes/apply.$slug'
 import { Route as OrganizerLayoutRouteImport } from './routes/organizer/_layout'
+import { Route as StoreVendorIdRouteImport } from './routes/store.$vendorId'
 import { Route as VendorLayoutRouteImport } from './routes/vendor/_layout'
 import { Route as OrganizerLayoutIndexRouteImport } from './routes/organizer/_layout/index'
 import { Route as OrganizerLayoutAnalyticsRouteImport } from './routes/organizer/_layout/analytics'
@@ -53,6 +54,11 @@ const ApplySlugRoute = ApplySlugRouteImport.update({
 const OrganizerLayoutRoute = OrganizerLayoutRouteImport.update({
   id: '/organizer/_layout',
   path: '/organizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreVendorIdRoute = StoreVendorIdRouteImport.update({
+  id: '/store/$vendorId',
+  path: '/store/$vendorId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VendorLayoutRoute = VendorLayoutRouteImport.update({
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/apply/$slug': typeof ApplySlugRoute
   '/organizer': typeof OrganizerLayoutRouteWithChildren
+  '/store/$vendorId': typeof StoreVendorIdRoute
   '/vendor': typeof VendorLayoutRouteWithChildren
   '/organizer/analytics': typeof OrganizerLayoutAnalyticsRoute
   '/organizer/communications': typeof OrganizerLayoutCommunicationsRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/apply/$slug': typeof ApplySlugRoute
+  '/store/$vendorId': typeof StoreVendorIdRoute
   '/organizer/analytics': typeof OrganizerLayoutAnalyticsRoute
   '/organizer/communications': typeof OrganizerLayoutCommunicationsRoute
   '/organizer/compliance': typeof OrganizerLayoutComplianceRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/apply/$slug': typeof ApplySlugRoute
   '/organizer/_layout': typeof OrganizerLayoutRouteWithChildren
+  '/store/$vendorId': typeof StoreVendorIdRoute
   '/vendor/_layout': typeof VendorLayoutRouteWithChildren
   '/organizer/_layout/analytics': typeof OrganizerLayoutAnalyticsRoute
   '/organizer/_layout/communications': typeof OrganizerLayoutCommunicationsRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/apply/$slug'
     | '/organizer'
+    | '/store/$vendorId'
     | '/vendor'
     | '/organizer/analytics'
     | '/organizer/communications'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/apply/$slug'
+    | '/store/$vendorId'
     | '/organizer/analytics'
     | '/organizer/communications'
     | '/organizer/compliance'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/apply/$slug'
     | '/organizer/_layout'
+    | '/store/$vendorId'
     | '/vendor/_layout'
     | '/organizer/_layout/analytics'
     | '/organizer/_layout/communications'
@@ -272,6 +284,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ApplySlugRoute: typeof ApplySlugRoute
   OrganizerLayoutRoute: typeof OrganizerLayoutRouteWithChildren
+  StoreVendorIdRoute: typeof StoreVendorIdRoute
   VendorLayoutRoute: typeof VendorLayoutRouteWithChildren
   VendorClaimVendorIdRoute: typeof VendorClaimVendorIdRoute
 }
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/organizer'
       fullPath: '/organizer'
       preLoaderRoute: typeof OrganizerLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/$vendorId': {
+      id: '/store/$vendorId'
+      path: '/store/$vendorId'
+      fullPath: '/store/$vendorId'
+      preLoaderRoute: typeof StoreVendorIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vendor/_layout': {
@@ -473,6 +493,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ApplySlugRoute: ApplySlugRoute,
   OrganizerLayoutRoute: OrganizerLayoutRouteWithChildren,
+  StoreVendorIdRoute: StoreVendorIdRoute,
   VendorLayoutRoute: VendorLayoutRouteWithChildren,
   VendorClaimVendorIdRoute: VendorClaimVendorIdRoute,
 }

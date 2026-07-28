@@ -72,7 +72,23 @@ export function useUpdateMyVendorProfile() {
       website: string;
       productCategories: string[];
       farmingPractices: string[];
+      keptPhotoUrls: string[];
+      newPhotoFiles: File[];
     }) => {
+      const newUrls: string[] = [];
+      for (const file of input.newPhotoFiles) {
+        const path = `${input.vendorId}/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("vendor-photos")
+          .upload(path, file);
+        if (uploadError) throw uploadError;
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("vendor-photos").getPublicUrl(path);
+        newUrls.push(publicUrl);
+      }
+      const allPhotos = [...input.keptPhotoUrls, ...newUrls];
+
       const { error } = await supabase
         .from("vendors")
         .update({
@@ -82,6 +98,7 @@ export function useUpdateMyVendorProfile() {
           website: input.website || null,
           product_categories: input.productCategories.length ? input.productCategories : null,
           farming_practices: input.farmingPractices.length ? input.farmingPractices : null,
+          photos: allPhotos.length ? allPhotos : null,
         })
         .eq("id", input.vendorId);
       if (error) throw error;
