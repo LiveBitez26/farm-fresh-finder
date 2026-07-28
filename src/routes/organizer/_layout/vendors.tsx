@@ -376,6 +376,7 @@ function VendorsPage() {
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState<VendorApplicationStatus | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const updateChecklist = useUpdateVendorChecklist();
 
   const rows: VendorRow[] = useMemo(() => {
@@ -631,7 +632,7 @@ function VendorsPage() {
                   />
                 )}
 
-                <div className="mt-5 flex gap-2">
+                <div className="mt-5 flex flex-wrap gap-2">
                   <Button
                     onClick={() =>
                       navigate({
@@ -642,6 +643,25 @@ function VendorsPage() {
                   >
                     Message vendor
                   </Button>
+                  {selected.isLive && selected.vendorData && !selected.vendorData.owner_user_id && (
+                    <Button
+                      variant="outline"
+                      className="border-border"
+                      onClick={() => {
+                        const url = `${window.location.origin}/vendor/claim/${selected.id}`;
+                        navigator.clipboard.writeText(url);
+                        setCopiedInviteId(selected.id);
+                        setTimeout(() => setCopiedInviteId(null), 2000);
+                      }}
+                    >
+                      {copiedInviteId === selected.id ? "Copied!" : "Copy vendor invite link"}
+                    </Button>
+                  )}
+                  {selected.isLive && selected.vendorData?.owner_user_id && (
+                    <Badge variant="secondary" className="self-center">
+                      Vendor Portal linked
+                    </Badge>
+                  )}
                 </div>
               </div>
             </>

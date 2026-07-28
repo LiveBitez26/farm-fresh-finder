@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as OrganizerLayoutRouteImport } from './routes/organizer/_layout'
+import { Route as VendorLayoutRouteImport } from './routes/vendor/_layout'
 import { Route as OrganizerLayoutIndexRouteImport } from './routes/organizer/_layout/index'
 import { Route as OrganizerLayoutAnalyticsRouteImport } from './routes/organizer/_layout/analytics'
 import { Route as OrganizerLayoutCommunicationsRouteImport } from './routes/organizer/_layout/communications'
@@ -22,6 +23,10 @@ import { Route as OrganizerLayoutPaymentsRouteImport } from './routes/organizer/
 import { Route as OrganizerLayoutScheduleRouteImport } from './routes/organizer/_layout/schedule'
 import { Route as OrganizerLayoutSettingsRouteImport } from './routes/organizer/_layout/settings'
 import { Route as OrganizerLayoutVendorsRouteImport } from './routes/organizer/_layout/vendors'
+import { Route as VendorLayoutIndexRouteImport } from './routes/vendor/_layout/index'
+import { Route as VendorLayoutProductsRouteImport } from './routes/vendor/_layout/products'
+import { Route as VendorLayoutProfileRouteImport } from './routes/vendor/_layout/profile'
+import { Route as VendorClaimVendorIdRouteImport } from './routes/vendor/claim.$vendorId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,6 +46,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const OrganizerLayoutRoute = OrganizerLayoutRouteImport.update({
   id: '/organizer/_layout',
   path: '/organizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VendorLayoutRoute = VendorLayoutRouteImport.update({
+  id: '/vendor/_layout',
+  path: '/vendor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizerLayoutIndexRoute = OrganizerLayoutIndexRouteImport.update({
@@ -91,12 +101,33 @@ const OrganizerLayoutVendorsRoute = OrganizerLayoutVendorsRouteImport.update({
   path: '/vendors',
   getParentRoute: () => OrganizerLayoutRoute,
 } as any)
+const VendorLayoutIndexRoute = VendorLayoutIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VendorLayoutRoute,
+} as any)
+const VendorLayoutProductsRoute = VendorLayoutProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => VendorLayoutRoute,
+} as any)
+const VendorLayoutProfileRoute = VendorLayoutProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => VendorLayoutRoute,
+} as any)
+const VendorClaimVendorIdRoute = VendorClaimVendorIdRouteImport.update({
+  id: '/vendor/claim/$vendorId',
+  path: '/vendor/claim/$vendorId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/organizer': typeof OrganizerLayoutRouteWithChildren
+  '/vendor': typeof VendorLayoutRouteWithChildren
   '/organizer/analytics': typeof OrganizerLayoutAnalyticsRoute
   '/organizer/communications': typeof OrganizerLayoutCommunicationsRoute
   '/organizer/compliance': typeof OrganizerLayoutComplianceRoute
@@ -105,7 +136,11 @@ export interface FileRoutesByFullPath {
   '/organizer/schedule': typeof OrganizerLayoutScheduleRoute
   '/organizer/settings': typeof OrganizerLayoutSettingsRoute
   '/organizer/vendors': typeof OrganizerLayoutVendorsRoute
+  '/vendor/products': typeof VendorLayoutProductsRoute
+  '/vendor/profile': typeof VendorLayoutProfileRoute
+  '/vendor/claim/$vendorId': typeof VendorClaimVendorIdRoute
   '/organizer/': typeof OrganizerLayoutIndexRoute
+  '/vendor/': typeof VendorLayoutIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -119,7 +154,11 @@ export interface FileRoutesByTo {
   '/organizer/schedule': typeof OrganizerLayoutScheduleRoute
   '/organizer/settings': typeof OrganizerLayoutSettingsRoute
   '/organizer/vendors': typeof OrganizerLayoutVendorsRoute
+  '/vendor/products': typeof VendorLayoutProductsRoute
+  '/vendor/profile': typeof VendorLayoutProfileRoute
+  '/vendor/claim/$vendorId': typeof VendorClaimVendorIdRoute
   '/organizer': typeof OrganizerLayoutIndexRoute
+  '/vendor': typeof VendorLayoutIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -127,6 +166,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/organizer/_layout': typeof OrganizerLayoutRouteWithChildren
+  '/vendor/_layout': typeof VendorLayoutRouteWithChildren
   '/organizer/_layout/analytics': typeof OrganizerLayoutAnalyticsRoute
   '/organizer/_layout/communications': typeof OrganizerLayoutCommunicationsRoute
   '/organizer/_layout/compliance': typeof OrganizerLayoutComplianceRoute
@@ -135,7 +175,11 @@ export interface FileRoutesById {
   '/organizer/_layout/schedule': typeof OrganizerLayoutScheduleRoute
   '/organizer/_layout/settings': typeof OrganizerLayoutSettingsRoute
   '/organizer/_layout/vendors': typeof OrganizerLayoutVendorsRoute
+  '/vendor/_layout/products': typeof VendorLayoutProductsRoute
+  '/vendor/_layout/profile': typeof VendorLayoutProfileRoute
+  '/vendor/claim/$vendorId': typeof VendorClaimVendorIdRoute
   '/organizer/_layout/': typeof OrganizerLayoutIndexRoute
+  '/vendor/_layout/': typeof VendorLayoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -144,6 +188,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/organizer'
+    | '/vendor'
     | '/organizer/analytics'
     | '/organizer/communications'
     | '/organizer/compliance'
@@ -152,7 +197,11 @@ export interface FileRouteTypes {
     | '/organizer/schedule'
     | '/organizer/settings'
     | '/organizer/vendors'
+    | '/vendor/products'
+    | '/vendor/profile'
+    | '/vendor/claim/$vendorId'
     | '/organizer/'
+    | '/vendor/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,13 +215,18 @@ export interface FileRouteTypes {
     | '/organizer/schedule'
     | '/organizer/settings'
     | '/organizer/vendors'
+    | '/vendor/products'
+    | '/vendor/profile'
+    | '/vendor/claim/$vendorId'
     | '/organizer'
+    | '/vendor'
   id:
     | '__root__'
     | '/'
     | '/login'
     | '/onboarding'
     | '/organizer/_layout'
+    | '/vendor/_layout'
     | '/organizer/_layout/analytics'
     | '/organizer/_layout/communications'
     | '/organizer/_layout/compliance'
@@ -181,7 +235,11 @@ export interface FileRouteTypes {
     | '/organizer/_layout/schedule'
     | '/organizer/_layout/settings'
     | '/organizer/_layout/vendors'
+    | '/vendor/_layout/products'
+    | '/vendor/_layout/profile'
+    | '/vendor/claim/$vendorId'
     | '/organizer/_layout/'
+    | '/vendor/_layout/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -189,6 +247,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   OrganizerLayoutRoute: typeof OrganizerLayoutRouteWithChildren
+  VendorLayoutRoute: typeof VendorLayoutRouteWithChildren
+  VendorClaimVendorIdRoute: typeof VendorClaimVendorIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -219,6 +279,13 @@ declare module '@tanstack/react-router' {
       path: '/organizer'
       fullPath: '/organizer'
       preLoaderRoute: typeof OrganizerLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vendor/_layout': {
+      id: '/vendor/_layout'
+      path: '/vendor'
+      fullPath: '/vendor'
+      preLoaderRoute: typeof VendorLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizer/_layout/': {
@@ -284,6 +351,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizerLayoutVendorsRouteImport
       parentRoute: typeof OrganizerLayoutRoute
     }
+    '/vendor/_layout/': {
+      id: '/vendor/_layout/'
+      path: '/'
+      fullPath: '/vendor/'
+      preLoaderRoute: typeof VendorLayoutIndexRouteImport
+      parentRoute: typeof VendorLayoutRoute
+    }
+    '/vendor/_layout/products': {
+      id: '/vendor/_layout/products'
+      path: '/products'
+      fullPath: '/vendor/products'
+      preLoaderRoute: typeof VendorLayoutProductsRouteImport
+      parentRoute: typeof VendorLayoutRoute
+    }
+    '/vendor/_layout/profile': {
+      id: '/vendor/_layout/profile'
+      path: '/profile'
+      fullPath: '/vendor/profile'
+      preLoaderRoute: typeof VendorLayoutProfileRouteImport
+      parentRoute: typeof VendorLayoutRoute
+    }
+    '/vendor/claim/$vendorId': {
+      id: '/vendor/claim/$vendorId'
+      path: '/vendor/claim/$vendorId'
+      fullPath: '/vendor/claim/$vendorId'
+      preLoaderRoute: typeof VendorClaimVendorIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -315,11 +410,29 @@ const OrganizerLayoutRouteWithChildren = OrganizerLayoutRoute._addFileChildren(
   OrganizerLayoutRouteChildren,
 )
 
+interface VendorLayoutRouteChildren {
+  VendorLayoutProductsRoute: typeof VendorLayoutProductsRoute
+  VendorLayoutProfileRoute: typeof VendorLayoutProfileRoute
+  VendorLayoutIndexRoute: typeof VendorLayoutIndexRoute
+}
+
+const VendorLayoutRouteChildren: VendorLayoutRouteChildren = {
+  VendorLayoutProductsRoute: VendorLayoutProductsRoute,
+  VendorLayoutProfileRoute: VendorLayoutProfileRoute,
+  VendorLayoutIndexRoute: VendorLayoutIndexRoute,
+}
+
+const VendorLayoutRouteWithChildren = VendorLayoutRoute._addFileChildren(
+  VendorLayoutRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   OrganizerLayoutRoute: OrganizerLayoutRouteWithChildren,
+  VendorLayoutRoute: VendorLayoutRouteWithChildren,
+  VendorClaimVendorIdRoute: VendorClaimVendorIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
