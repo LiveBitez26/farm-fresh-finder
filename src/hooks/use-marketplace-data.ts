@@ -1,0 +1,97 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "../lib/supabase";
+import type { Market, Product, Vendor } from "../lib/types";
+
+/** All active markets, across every organization — this is the public,
+ * cross-tenant marketplace view (relies on markets_public_read). */
+export function usePublicMarkets() {
+  return useQuery({
+    queryKey: ["marketplace_markets"],
+    queryFn: async (): Promise<Market[]> => {
+      const { data, error } = await supabase
+        .from("markets")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data as Market[]) ?? [];
+    },
+  });
+}
+
+export function usePublicMarket(marketId: string | undefined) {
+  return useQuery({
+    queryKey: ["marketplace_market", marketId],
+    enabled: Boolean(marketId),
+    queryFn: async (): Promise<Market | null> => {
+      const { data, error } = await supabase
+        .from("markets")
+        .select("*")
+        .eq("id", marketId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as Market) ?? null;
+    },
+  });
+}
+
+/** Active vendors belonging to the same organization as a given market.
+ * (There's no populated vendor<->market join table yet, so this is the
+ * best available proxy for "farmers at this market" today.) */
+export function usePublicMarketVendors(marketId: string | undefined) {
+  return useQuery({
+    queryKey: ["marketplace_market_vendors", marketId],
+    enabled: Boolean(marketId),
+    queryFn: async (): Promise<Vendor[]> => {
+      const { data: market, error: marketError } = await supabase
+        .from("markets")
+        .select("organization_id")
+        .eq("id", marketId)
+        .maybeSingle();
+      if (marketError) throw marketError;
+      if (!market) return [];
+
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("*")
+        .eq("organization_id", market.organization_id)
+        .eq("status", "active")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data as Vendor[]) ?? [];
+    },
+  });
+}
+
+export function usePublicVendor(vendorId: string | undefined) {
+  return useQuery({
+    queryKey: ["marketplace_vendor", vendorId],
+    enabled: Boolean(vendorId),
+    queryFn: async (): Promise<Vendor | null> => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("*")
+        .eq("id", vendorId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as Vendor) ?? null;
+    },
+  });
+}
+
+export function usePublicVendorProducts(vendorId: string | undefined) {
+  return useQuery({
+    queryKey: ["marketplace_vendor_products", vendorId],
+    enabled: Boolean(vendorId),
+    queryFn: async (): Promise<Product[]> => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("vendor_id", vendorId)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data as Product[]) ?? [];
+    },
+  });
+}
