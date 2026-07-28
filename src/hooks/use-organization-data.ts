@@ -769,6 +769,23 @@ export function useCreateProduct() {
   });
 }
 
+/** Delete a product. Works from either the organizer or vendor side —
+ * RLS (products_org_all / products_owner_all) already determines who's
+ * actually allowed to delete which rows. */
+export function useDeleteProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (productId: string) => {
+      const { error } = await supabase.from("products").delete().eq("id", productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["my_products"] });
+    },
+  });
+}
+
 /** Update an existing product from the organizer side — same
  * capabilities as the vendor's own edit (full field edit, photo
  * management, subscription frequencies). */

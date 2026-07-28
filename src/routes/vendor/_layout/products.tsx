@@ -1,9 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Plus, Repeat, ImagePlus, Pencil } from "lucide-react";
+import { Plus, Repeat, ImagePlus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../../components/ui/alert-dialog";
 import {
   ProductForm,
   EMPTY_PRODUCT_FORM,
@@ -18,7 +28,7 @@ import {
   useMyVendor,
   useUpdateMyProduct,
 } from "../../../hooks/use-vendor-portal-data";
-import { useToggleProductActive } from "../../../hooks/use-organization-data";
+import { useDeleteProduct, useToggleProductActive } from "../../../hooks/use-organization-data";
 import type { Product } from "../../../lib/types";
 
 export const Route = createFileRoute("/vendor/_layout/products")({
@@ -30,7 +40,10 @@ function VendorProductsPage() {
   const { data: products, isLoading } = useMyProducts(vendor?.id);
   const createProduct = useCreateMyProduct();
   const updateProduct = useUpdateMyProduct();
+  const deleteProduct = useDeleteProduct();
   const toggleActive = useToggleProductActive();
+
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [addForm, setAddForm] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
@@ -212,6 +225,15 @@ function VendorProductsPage() {
                   >
                     {p.is_active ? "Active" : "Inactive"}
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setProductToDelete(p)}
+                  >
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                    Delete
+                  </Button>
                 </div>
               </div>
             ))}
@@ -239,6 +261,33 @@ function VendorProductsPage() {
           />
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={Boolean(productToDelete)}
+        onOpenChange={(open) => !open && setProductToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{productToDelete?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the product permanently. Customers will no longer be able to find or
+              order it. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (productToDelete) deleteProduct.mutate(productToDelete.id);
+                setProductToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

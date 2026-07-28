@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, ChevronRight, Loader2, Plus } from "lucide-react";
+import { Search, ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
 import { Input } from "../../../components/ui/input";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
@@ -21,6 +21,16 @@ import {
 } from "../../../components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../../components/ui/alert-dialog";
+import {
   ProductForm,
   EMPTY_PRODUCT_FORM,
   validateProductForm,
@@ -30,6 +40,7 @@ import { useAuth } from "../../../hooks/use-auth";
 import { formatMoney } from "../../../lib/currency";
 import {
   useCreateProduct,
+  useDeleteProduct,
   useOrganization,
   useProductsForVendor,
   useToggleProductActive,
@@ -263,7 +274,10 @@ function VendorProductsSection({
   const { data: products, isLoading } = useProductsForVendor(vendorId);
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
   const toggleActive = useToggleProductActive();
+
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [addForm, setAddForm] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
@@ -409,6 +423,14 @@ function VendorProductsSection({
               >
                 {p.is_active ? "Active" : "Inactive"}
               </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setProductToDelete(p)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         ))
@@ -436,6 +458,33 @@ function VendorProductsSection({
           />
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={Boolean(productToDelete)}
+        onOpenChange={(open) => !open && setProductToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{productToDelete?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the product permanently. Customers will no longer be able to find or
+              order it. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (productToDelete) deleteProduct.mutate(productToDelete.id);
+                setProductToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
