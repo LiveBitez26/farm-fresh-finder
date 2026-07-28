@@ -768,6 +768,28 @@ export function useDeleteBooth() {
   });
 }
 
+/** Whether a vendor has a verified insurance certificate on file —
+ * used to auto-check 'Insurance uploaded' from real Compliance Vault
+ * data instead of a manual, duplicate checkbox. */
+export function useVendorHasVerifiedInsurance(vendorId: string | undefined) {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["vendor_verified_insurance", organizationId, vendorId],
+    enabled: Boolean(organizationId && vendorId),
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("documents")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId)
+        .eq("vendor_id", vendorId)
+        .eq("document_type", "insurance_certificate")
+        .eq("status", "verified");
+      if (error) throw error;
+      return (count ?? 0) > 0;
+    },
+  });
+}
+
 /** Toggle one onboarding-checklist field on a vendor
  * (insurance_uploaded / permit_verified / agreement_signed / fees_paid). */
 export function useUpdateVendorChecklist() {

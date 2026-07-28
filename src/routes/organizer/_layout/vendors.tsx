@@ -27,6 +27,7 @@ import {
   useUpdateVendorChecklist,
   useVendorApplications,
   useVendorBoothAssignment,
+  useVendorHasVerifiedInsurance,
   useVendors,
 } from "../../../hooks/use-organization-data";
 import type { Vendor, VendorApplicationStatus } from "../../../lib/types";
@@ -63,9 +64,8 @@ const CHECKLIST_LABELS = [
 
 const EDITABLE_CHECKLIST_FIELDS: Record<
   number,
-  "insurance_uploaded" | "permit_verified" | "agreement_signed" | "fees_paid"
+  "permit_verified" | "agreement_signed" | "fees_paid"
 > = {
-  1: "insurance_uploaded",
   2: "permit_verified",
   3: "agreement_signed",
   4: "fees_paid",
@@ -377,6 +377,9 @@ function VendorsPage() {
   const { data: realBoothAssignment } = useVendorBoothAssignment(
     selected?.isLive ? selected.id : undefined,
   );
+  const { data: hasVerifiedInsurance } = useVendorHasVerifiedInsurance(
+    selected?.isLive ? selected.id : undefined,
+  );
 
   const filtered = rows.filter((r) => {
     const matchesStage = stage === "all" || r.stage === stage;
@@ -557,6 +560,8 @@ function VendorsPage() {
                 </p>
                 {CHECKLIST_LABELS.map((label, i) => {
                   const isBoothStep = i === CHECKLIST_LABELS.length - 1;
+                  const isInsuranceStep = i === 1;
+                  const isAutoStep = isBoothStep || isInsuranceStep;
                   const editableField = EDITABLE_CHECKLIST_FIELDS[i];
                   const isEditable =
                     selected.isLive && Boolean(editableField) && Boolean(selected.vendorData);
@@ -564,9 +569,11 @@ function VendorsPage() {
                   const checked =
                     selected.isLive && isBoothStep
                       ? Boolean(realBoothAssignment)
-                      : isEditable
-                        ? selected.vendorData![editableField]
-                        : selected.checklist[i];
+                      : selected.isLive && isInsuranceStep
+                        ? Boolean(hasVerifiedInsurance)
+                        : isEditable
+                          ? selected.vendorData![editableField]
+                          : selected.checklist[i];
 
                   const toggle = () => {
                     if (!isEditable || !selected.vendorData) return;
@@ -597,7 +604,7 @@ function VendorsPage() {
                         {checked ? "✓" : ""}
                       </span>
                       {label}
-                      {isBoothStep && selected.isLive && (
+                      {isAutoStep && selected.isLive && (
                         <span className="ml-auto text-[10.5px] text-muted-foreground">auto</span>
                       )}
                     </button>
