@@ -1,10 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, Check, Clock, AlertTriangle } from "lucide-react";
+import { Search, Check, Clock, AlertTriangle, Plus, Loader2 } from "lucide-react";
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
+import { Label } from "../../../components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../../components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
 import { useAuth } from "../../../hooks/use-auth";
-import { useComplianceDocuments } from "../../../hooks/use-organization-data";
+import {
+  useComplianceDocuments,
+  useCreateComplianceDocument,
+  useUpdateDocumentStatus,
+  useVendors,
+} from "../../../hooks/use-organization-data";
 import type { DocumentStatus, DocumentType } from "../../../lib/types";
 
 export const Route = createFileRoute("/organizer/_layout/compliance")({
@@ -17,6 +37,7 @@ type DocRow = {
   type: string;
   status: "verified" | "pending" | "expiring";
   meta: string;
+  isLive: boolean;
 };
 
 const TABS: { key: "all" | "verified" | "pending" | "expiring"; label: string }[] = [
@@ -43,6 +64,7 @@ const MOCK_DOCS: DocRow[] = [
     type: "USDA Organic Certificate",
     status: "expiring",
     meta: "Mar 12, 2027 — flagged for annual review",
+    isLive: false,
   },
   {
     id: "2",
@@ -50,6 +72,7 @@ const MOCK_DOCS: DocRow[] = [
     type: "Health Department Inspection",
     status: "expiring",
     meta: "Jul 16, 2026 — 6 days",
+    isLive: false,
   },
   {
     id: "3",
@@ -57,6 +80,7 @@ const MOCK_DOCS: DocRow[] = [
     type: "Food Handler's Permit",
     status: "expiring",
     meta: "Aug 6, 2026 — 28 days",
+    isLive: false,
   },
   {
     id: "4",
@@ -64,6 +88,7 @@ const MOCK_DOCS: DocRow[] = [
     type: "Liability Insurance",
     status: "expiring",
     meta: "Aug 9, 2026 — 30 days",
+    isLive: false,
   },
   {
     id: "5",
@@ -71,6 +96,7 @@ const MOCK_DOCS: DocRow[] = [
     type: "Business License",
     status: "verified",
     meta: "Verified · Jan 2027",
+    isLive: false,
   },
   {
     id: "6",
@@ -78,6 +104,7 @@ const MOCK_DOCS: DocRow[] = [
     type: "Liability Insurance",
     status: "pending",
     meta: "Submitted Jul 7 — awaiting review",
+    isLive: false,
   },
   {
     id: "7",
@@ -85,6 +112,7 @@ const MOCK_DOCS: DocRow[] = [
     type: "Home Kitchen Permit",
     status: "pending",
     meta: "Submitted Jul 9 — awaiting review",
+    isLive: false,
   },
   {
     id: "8",
@@ -92,6 +120,7 @@ const MOCK_DOCS: DocRow[] = [
     type: "Business License",
     status: "pending",
     meta: "Not yet submitted",
+    isLive: false,
   },
 ];
 
@@ -107,12 +136,123 @@ function stampClasses(status: DocRow["status"]) {
   return "border-destructive text-destructive bg-danger-soft";
 }
 
+const DOC_TYPE_OPTIONS: { key: DocumentType; label: string }[] = [
+  { key: "business_license", label: "Business License" },
+  { key: "food_permit", label: "Food Permit" },
+  { key: "insurance_certificate", label: "Insurance Certificate" },
+  { key: "organic_certification", label: "USDA Organic Certificate" },
+  { key: "health_department_document", label: "Health Department Document" },
+  { key: "safety_document", label: "Safety Document" },
+  { key: "other_certification", label: "Other Certification" },
+];
+
+function LogDocumentDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { data: vendors } = useVendors();
+  const createDocument = useCreateComplianceDocument();
+
+  const [vendorId, setVendorId] = useState("");
+  const [documentType, setDocumentType] = useState<DocumentType | "">("");
+  const [title, setTitle] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSubmit() {
+    setError(null);
+    if (!vendorId || !documentType || !title.trim()) {
+      setError("Choose a vendor, document type, and title.");
+      return;
+    }
+    createDocument.mutate(
+      { vendorId, documentType, title: title.trim(), expiresAt: expiresAt || undefined },
+      {
+        onSuccess: () => {
+          onOpenChange(false);
+          setTitle("");
+          setExpiresAt("");
+        },
+        onError: (e: Error) => setError(e.message),
+      },
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-[family-name:var(--font-display)]">
+            Log a Document
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Vendor</Label>
+            <Select value={vendorId} onValueChange={setVendorId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a vendor" />
+              </SelectTrigger>
+              <SelectContent>
+                {(vendors ?? []).map((v) => (
+                  <SelectItem key={v.id} value={v.id}>
+                    {v.business_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Document type</Label>
+            <Select value={documentType} onValueChange={(v) => setDocumentType(v as DocumentType)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a type" />
+              </SelectTrigger>
+              <SelectContent>
+                {DOC_TYPE_OPTIONS.map((t) => (
+                  <SelectItem key={t.key} value={t.key}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Title</Label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="USDA Organic Certificate"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Expiration date (optional)</Label>
+            <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
+        <DialogFooter>
+          <Button onClick={handleSubmit} disabled={createDocument.isPending}>
+            {createDocument.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Log document
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function CompliancePage() {
   const { profile } = useAuth();
   const hasOrg = Boolean(profile?.organization_id);
   const { data: documents, isLoading } = useComplianceDocuments();
+  const updateStatus = useUpdateDocumentStatus();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"all" | "verified" | "pending" | "expiring">("all");
+  const [logDialogOpen, setLogDialogOpen] = useState(false);
 
   const rows: DocRow[] = useMemo(() => {
     if (documents && documents.length > 0) {
@@ -122,6 +262,7 @@ function CompliancePage() {
         type: DOCUMENT_TYPE_LABELS[d.document_type],
         status: mapDbStatus(d.status),
         meta: d.expires_at ? `Expires ${d.expires_at}` : "No expiration on file",
+        isLive: true,
       }));
     }
     if (hasOrg) return [];
@@ -140,13 +281,21 @@ function CompliancePage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
-          Compliance Vault
-        </h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {needsAttention} document{needsAttention === 1 ? "" : "s"} need attention
-        </p>
+      <div className="mb-5 flex items-center justify-between">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-[19px] font-semibold text-foreground">
+            Compliance Vault
+          </h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {needsAttention} document{needsAttention === 1 ? "" : "s"} need attention
+          </p>
+        </div>
+        {hasOrg && (
+          <Button onClick={() => setLogDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Log Document
+          </Button>
+        )}
       </div>
 
       <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2.5">
@@ -204,8 +353,24 @@ function CompliancePage() {
               </div>
               <div className="mr-1.5 text-right text-xs text-muted-foreground">{doc.meta}</div>
               <div className="flex shrink-0 gap-1.5">
-                {doc.status !== "verified" && <Button size="sm">Approve</Button>}
-                <Button size="sm" variant="outline" className="border-border">
+                {doc.status !== "verified" && (
+                  <Button
+                    size="sm"
+                    disabled={!doc.isLive || updateStatus.isPending}
+                    onClick={() => updateStatus.mutate({ documentId: doc.id, status: "verified" })}
+                  >
+                    Approve
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-border"
+                  disabled={!doc.isLive || updateStatus.isPending}
+                  onClick={() =>
+                    updateStatus.mutate({ documentId: doc.id, status: "update_requested" })
+                  }
+                >
                   Request update
                 </Button>
               </div>
@@ -213,6 +378,8 @@ function CompliancePage() {
           ))}
         </div>
       )}
+
+      <LogDocumentDialog open={logDialogOpen} onOpenChange={setLogDialogOpen} />
     </div>
   );
 }

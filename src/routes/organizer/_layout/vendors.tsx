@@ -27,6 +27,7 @@ import {
   useUpdateVendorChecklist,
   useVendorApplications,
   useVendorBoothAssignment,
+  useVendorBoothAssignmentsMap,
   useVendorHasVerifiedInsurance,
   useVendors,
 } from "../../../hooks/use-organization-data";
@@ -361,6 +362,7 @@ function VendorsPage() {
   const navigate = useNavigate();
   const hasOrg = Boolean(profile?.organization_id);
   const { data: vendors, isLoading } = useVendors();
+  const { data: boothMap } = useVendorBoothAssignmentsMap();
   const { data: applications } = useVendorApplications();
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState<VendorApplicationStatus | "all">("all");
@@ -469,7 +471,9 @@ function VendorsPage() {
                       {STAGE_LABEL[row.stage]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-mono text-muted-foreground">{row.booth}</TableCell>
+                  <TableCell className="font-mono text-muted-foreground">
+                    {row.isLive ? (boothMap?.[row.id] ?? "—") : row.booth}
+                  </TableCell>
                   <TableCell className="font-mono text-muted-foreground">{row.since}</TableCell>
                   <TableCell className="text-muted-foreground">
                     <ChevronRight className="h-4 w-4" />

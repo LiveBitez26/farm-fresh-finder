@@ -78,6 +78,59 @@ export function useComplianceDocuments() {
   });
 }
 
+/** Approve, verify, or request an update on a compliance document. */
+export function useUpdateDocumentStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ documentId, status }: { documentId: string; status: DocumentStatus }) => {
+      const { error } = await supabase
+        .from("documents")
+        .update({
+          status,
+          verified_at: status === "verified" ? new Date().toISOString() : null,
+        })
+        .eq("id", documentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["overview_metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["nav_badge_counts"] });
+      queryClient.invalidateQueries({ queryKey: ["vendor_verified_insurance"] });
+    },
+  });
+}
+
+/** Log a new compliance document for a vendor (organizer entering it on
+ * their behalf, since there's no vendor-facing upload flow yet). */
+export function useCreateComplianceDocument() {
+  const organizationId = useOrganizationId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      vendorId: string;
+      documentType: DocumentType;
+      title: string;
+      expiresAt?: string;
+    }) => {
+      if (!organizationId) throw new Error("No organization");
+      const { error } = await supabase.from("documents").insert({
+        organization_id: organizationId,
+        vendor_id: input.vendorId,
+        document_type: input.documentType,
+        title: input.title,
+        expires_at: input.expiresAt || null,
+        status: "pending_review",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["nav_badge_counts"] });
+    },
+  });
+}
+
 export function useOrganization() {
   const organizationId = useOrganizationId();
   return useQuery({
@@ -91,6 +144,52 @@ export function useOrganization() {
         .maybeSingle();
       if (error) throw error;
       return (data as Organization) ?? null;
+    },
+  });
+}
+
+/** Update the organization's own editable fields (name, country). */
+export function useUpdateOrganization() {
+  const organizationId = useOrganizationId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { name: string; country?: string }) => {
+      if (!organizationId) throw new Error("No organization");
+      const { error } = await supabase
+        .from("organizations")
+        .update({ name: input.name, country: input.country || null })
+        .eq("id", organizationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["organization"] });
+    },
+  });
+}
+
+/** Real staff list for the organization (name/email + role), for
+ * Organization Settings. */
+export function useOrganizationStaff() {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["organization_staff", organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("organization_members")
+        .select("*, profiles(full_name, email)")
+        .eq("organization_id", organizationId);
+      if (error) throw error;
+      type Row = {
+        id: string;
+        role: string;
+        profiles: { full_name: string | null; email: string | null } | null;
+      };
+      return ((data as Row[]) ?? []).map((row) => ({
+        id: row.id,
+        role: row.role,
+        name: row.profiles?.full_name || row.profiles?.email || "Unknown",
+      }));
     },
   });
 }
@@ -842,6 +941,33 @@ export function useVendorBoothAssignment(vendorId: string | undefined) {
         boothCode: row.booths?.code ?? null,
         marketName: row.booths?.markets?.name ?? null,
       };
+    },
+  });
+}
+
+/** Every vendor's current booth code across the whole org, as a lookup
+ * map — used so the Vendor Management table itself can show real booth
+ * codes per row instead of always showing "—". */
+export function useVendorBoothAssignmentsMap() {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["vendor_booth_assignments_map", organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booth_assignments")
+        .select("vendor_id, booths(code)")
+        .eq("organization_id", organizationId)
+        .not("vendor_id", "is", null);
+      if (error) throw error;
+      type Row = { vendor_id: string; booths: { code: string } | null };
+      const map: Record<string, string> = {};
+      for (const row of (data as unknown as Row[]) ?? []) {
+        if (row.booths?.code && !map[row.vendor_id]) {
+          map[row.vendor_id] = row.booths.code;
+        }
+      }
+      return map;
     },
   });
 }
