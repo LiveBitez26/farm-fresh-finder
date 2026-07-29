@@ -47,47 +47,54 @@ function App() {
   const [marketId, setMarketId] = useState<string | null>(null);
   const [vendorId, setVendorId] = useState<string | null>(null);
 
+  function goTab(t: Tab) {
+    setTab(t);
+    if (t === "markets") setScreen("markets");
+  }
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto w-full max-w-[440px] pb-28 md:max-w-6xl md:pb-16 md:pt-6 md:px-6">
-        {tab === "markets" && screen === "markets" && (
-          <MarketsScreen
-            onOpen={(id) => {
-              setMarketId(id);
-              setScreen("market-detail");
-            }}
-          />
-        )}
-        {tab === "markets" && screen === "market-detail" && marketId && (
-          <MarketDetail
-            marketId={marketId}
-            onBack={() => setScreen("markets")}
-            onOpenFarmer={(id) => {
-              setVendorId(id);
-              setScreen("farmer");
-            }}
-            cart={cart}
-          />
-        )}
-        {tab === "markets" && screen === "farmer" && vendorId && (
-          <FarmerScreen
-            vendorId={vendorId}
-            onBack={() => setScreen("market-detail")}
-            cart={cart}
-            addCart={() => setCart((c) => c + 1)}
-          />
-        )}
-        {tab === "cart" && <CartScreen count={cart} />}
-        {tab === "profile" && <ProfileScreen />}
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <TopNav tab={tab} setTab={goTab} cart={cart} />
+
+      <div className="flex-1">
+        <div className="mx-auto w-full max-w-[440px] pb-28 md:max-w-6xl md:pb-16 md:pt-6 md:px-6">
+          {tab === "markets" && screen === "markets" && (
+            <MarketsScreen
+              onOpen={(id) => {
+                setMarketId(id);
+                setScreen("market-detail");
+              }}
+            />
+          )}
+          {tab === "markets" && screen === "market-detail" && marketId && (
+            <MarketDetail
+              marketId={marketId}
+              onBack={() => setScreen("markets")}
+              onOpenFarmer={(id) => {
+                setVendorId(id);
+                setScreen("farmer");
+              }}
+              cart={cart}
+            />
+          )}
+          {tab === "markets" && screen === "farmer" && vendorId && (
+            <FarmerScreen
+              vendorId={vendorId}
+              onBack={() => setScreen("market-detail")}
+              cart={cart}
+              addCart={() => setCart((c) => c + 1)}
+            />
+          )}
+          {tab === "cart" && <CartScreen count={cart} />}
+          {tab === "profile" && <ProfileScreen />}
+        </div>
       </div>
-      <BottomNav
-        tab={tab}
-        setTab={(t) => {
-          setTab(t);
-          if (t === "markets") setScreen("markets");
-        }}
-        cart={cart}
-      />
+
+      <Footer setTab={goTab} />
+
+      <div className="md:hidden">
+        <BottomNav tab={tab} setTab={goTab} cart={cart} />
+      </div>
     </div>
   );
 }
@@ -707,6 +714,149 @@ function ProfileScreen() {
         )}
       </div>
     </div>
+  );
+}
+
+function TopNav({ tab, setTab, cart }: { tab: Tab; setTab: (t: Tab) => void; cart: number }) {
+  return (
+    <header className="sticky top-0 z-40 hidden border-b border-border bg-card/95 backdrop-blur md:block">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <button onClick={() => setTab("markets")} className="flex items-center gap-2.5">
+          <div className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground">
+            <Leaf className="h-4.5 w-4.5" />
+          </div>
+          <span className="font-display text-lg font-semibold">MarketConnect</span>
+        </button>
+
+        <nav className="flex items-center gap-1">
+          <button
+            onClick={() => setTab("markets")}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              tab === "markets"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Markets
+          </button>
+          <button
+            onClick={() => setTab("profile")}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              tab === "profile"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            For Farmers &amp; Organizers
+          </button>
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <a
+            href="/login"
+            className="text-sm font-semibold text-muted-foreground hover:text-foreground"
+          >
+            Sign in
+          </a>
+          <button
+            onClick={() => setTab("cart")}
+            className="relative grid h-10 w-10 place-items-center rounded-full border border-border bg-background text-foreground transition hover:bg-secondary"
+          >
+            <ShoppingBag className="h-4.5 w-4.5" />
+            {cart > 0 && (
+              <span className="absolute -top-1 -right-1 grid h-4.5 min-w-4.5 place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-accent-foreground">
+                {cart}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function Footer({ setTab }: { setTab: (t: Tab) => void }) {
+  return (
+    <footer className="border-t border-border bg-card">
+      <div className="mx-auto max-w-6xl px-6 py-10 md:py-14">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2">
+              <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground">
+                <Leaf className="h-4 w-4" />
+              </div>
+              <span className="font-display text-base font-semibold">MarketConnect</span>
+            </div>
+            <p className="mt-3 max-w-xs text-sm text-muted-foreground">
+              Connecting local farmers markets, growers, and customers in one place.
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Marketplace
+            </p>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li>
+                <button
+                  onClick={() => setTab("markets")}
+                  className="text-foreground hover:text-primary"
+                >
+                  Browse Markets
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => setTab("cart")}
+                  className="text-foreground hover:text-primary"
+                >
+                  Your Cart
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              For Farmers
+            </p>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li>
+                <button
+                  onClick={() => setTab("profile")}
+                  className="text-foreground hover:text-primary"
+                >
+                  Apply to Sell
+                </button>
+              </li>
+              <li>
+                <a href="/login" className="text-foreground hover:text-primary">
+                  Vendor Sign In
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              For Organizers
+            </p>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li>
+                <a href="/login" className="text-foreground hover:text-primary">
+                  Organizer Sign In
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-10 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
+          <span>© {new Date().getFullYear()} MarketConnect. All rights reserved.</span>
+          <span>Built for local farmers markets everywhere.</span>
+        </div>
+      </div>
+    </footer>
   );
 }
 
