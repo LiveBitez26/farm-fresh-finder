@@ -103,7 +103,13 @@ function MarketsScreen({ onOpen }: { onOpen: (marketId: string) => void }) {
 
   return (
     <div className="animate-in fade-in duration-300">
-      <div className="relative h-[280px] overflow-hidden rounded-b-[36px] bg-gradient-to-br from-primary to-earth md:h-[380px] md:rounded-[32px]">
+      <div className="relative h-[280px] overflow-hidden rounded-b-[36px] md:h-[380px] md:rounded-[32px]">
+        <img
+          src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=1400&q=80"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/60" />
         <div className="relative flex h-full flex-col justify-between p-6 text-white md:p-12">
           <div className="flex items-center gap-2 text-sm font-medium">
             <div className="grid h-8 w-8 place-items-center rounded-full bg-white/15 backdrop-blur">
