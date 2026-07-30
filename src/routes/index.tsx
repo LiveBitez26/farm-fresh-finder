@@ -739,19 +739,15 @@ function TopNav({ tab, setTab, cart }: { tab: Tab; setTab: (t: Tab) => void; car
           >
             Markets
           </button>
-          <button
-            onClick={() => setTab("profile")}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              tab === "profile"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            For Farmers &amp; Organizers
-          </button>
         </nav>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setTab("profile")}
+            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
+          >
+            Sell With Us
+          </button>
           <a
             href="/login"
             className="text-sm font-semibold text-muted-foreground hover:text-foreground"
@@ -829,22 +825,17 @@ function Footer({ setTab }: { setTab: (t: Tab) => void }) {
                   Apply to Sell
                 </button>
               </li>
-              <li>
-                <a href="/login" className="text-foreground hover:text-primary">
-                  Vendor Sign In
-                </a>
-              </li>
             </ul>
           </div>
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              For Organizers
+              For Organizers &amp; Vendors
             </p>
             <ul className="mt-3 space-y-2 text-sm">
               <li>
                 <a href="/login" className="text-foreground hover:text-primary">
-                  Organizer Sign In
+                  Sign In
                 </a>
               </li>
             </ul>
