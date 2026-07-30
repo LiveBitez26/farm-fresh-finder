@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Leaf, Loader2 } from "lucide-react";
 import { useAuth } from "../hooks/use-auth";
-import { isSupabaseConfigured } from "../lib/supabase";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -57,13 +56,6 @@ function LoginPage() {
               : "Create your organizer account"}
           </p>
         </div>
-
-        {!isSupabaseConfigured && (
-          <div className="mb-6 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-xs text-accent-foreground">
-            <p className="font-medium text-foreground">Sign-in is temporarily unavailable.</p>
-            <p className="mt-1 text-muted-foreground">Please check back shortly.</p>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "sign-up" && (
