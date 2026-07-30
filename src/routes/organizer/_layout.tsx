@@ -31,7 +31,7 @@ function OrganizerLayout() {
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <span className="text-sm font-medium text-muted-foreground">
-              {!isSupabaseConfigured && "Preview mode — connect Supabase for live data"}
+              {!isSupabaseConfigured && "Preview mode — sample data shown"}
             </span>
           </header>
           <main className="flex-1 overflow-y-auto bg-background p-6 md:p-8">

@@ -60,13 +60,8 @@ function LoginPage() {
 
         {!isSupabaseConfigured && (
           <div className="mb-6 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-xs text-accent-foreground">
-            <p className="font-medium text-foreground">Supabase isn't connected yet.</p>
-            <p className="mt-1 text-muted-foreground">
-              Add <code className="rounded bg-muted px-1 py-0.5">VITE_SUPABASE_URL</code> and{" "}
-              <code className="rounded bg-muted px-1 py-0.5">VITE_SUPABASE_ANON_KEY</code> to{" "}
-              <code className="rounded bg-muted px-1 py-0.5">.env.local</code> to enable real
-              sign-in.
-            </p>
+            <p className="font-medium text-foreground">Sign-in is temporarily unavailable.</p>
+            <p className="mt-1 text-muted-foreground">Please check back shortly.</p>
           </div>
         )}
 

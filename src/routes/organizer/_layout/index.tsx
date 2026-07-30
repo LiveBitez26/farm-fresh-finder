@@ -455,7 +455,7 @@ function OverviewPage() {
           <p className="text-xs text-muted-foreground">
             {hasOrg
               ? "Vendor count, sales, and attendance are live from your organization. Community impact figures are illustrative until donation tracking ships."
-              : "Showing sample data — connect Supabase and create an organization for live totals."}
+              : "Showing sample data — create an organization for live totals."}
           </p>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setReportOpen(false)}>
