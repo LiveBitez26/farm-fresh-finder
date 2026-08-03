@@ -123,6 +123,34 @@ export function usePublicMarketSchedules(marketId: string | undefined) {
   });
 }
 
+/** Announcements targeted at customers for a given market — either
+ * market-specific (market_id matches) or organization-wide (market_id
+ * is null), for that market's organization. */
+export function usePublicMarketAnnouncements(
+  marketId: string | undefined,
+  organizationId: string | undefined,
+) {
+  return useQuery({
+    queryKey: ["marketplace_market_announcements", marketId, organizationId],
+    enabled: Boolean(marketId && organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("announcements")
+        .select("id, message, created_at, market_id")
+        .eq("organization_id", organizationId)
+        .eq("audience", "customers")
+        .or(`market_id.eq.${marketId},market_id.is.null`)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return (
+        (data as { id: string; message: string; created_at: string; market_id: string | null }[]) ??
+        []
+      );
+    },
+  });
+}
+
 /** Active organizations, for the marketplace's 'Apply to sell here'
  * links — organization name/slug are public directory info. */
 export function usePublicOrganizations() {

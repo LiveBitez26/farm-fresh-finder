@@ -22,6 +22,7 @@ import {
   usePublicMarket,
   usePublicMarketVendors,
   usePublicMarketSchedules,
+  usePublicMarketAnnouncements,
   usePublicVendor,
   usePublicVendorProducts,
   usePublicOrganizations,
@@ -261,6 +262,7 @@ function MarketDetail({
   const { data: market, isLoading: marketLoading } = usePublicMarket(marketId);
   const { data: vendors, isLoading: vendorsLoading } = usePublicMarketVendors(marketId);
   const { data: schedules, isLoading: schedulesLoading } = usePublicMarketSchedules(marketId);
+  const { data: announcements } = usePublicMarketAnnouncements(marketId, market?.organization_id);
 
   if (!marketLoading && !market) {
     return (
@@ -374,6 +376,30 @@ function MarketDetail({
               );
             })}
           </div>
+        )}
+
+        {(announcements ?? []).length > 0 && (
+          <>
+            <h2 className="mt-6 font-display text-lg font-semibold md:mt-8 md:text-2xl">
+              Announcements
+            </h2>
+            <div className="mt-3 space-y-2">
+              {announcements!.map((a) => (
+                <div
+                  key={a.id}
+                  className="rounded-xl border border-accent/30 bg-accent/10 px-4 py-3"
+                >
+                  <p className="text-sm text-foreground">{a.message}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {new Date(a.created_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         <h2 className="mt-6 font-display text-xl font-semibold md:mt-10 md:text-3xl">
