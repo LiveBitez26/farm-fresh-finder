@@ -646,20 +646,24 @@ export function useAnnouncements(limit = 10) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("announcements")
-        .select("*")
+        .select("*, markets(name)")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return (
-        (data as {
-          id: string;
-          audience: "all_vendors" | "specific_vendors" | "customers";
-          channel: "in_app" | "email" | "sms";
-          message: string;
-          created_at: string;
-        }[]) ?? []
-      );
+      type Row = {
+        id: string;
+        audience: "all_vendors" | "specific_vendors" | "customers";
+        channel: "in_app" | "email" | "sms";
+        message: string;
+        created_at: string;
+        market_id: string | null;
+        markets: { name: string } | null;
+      };
+      return ((data as unknown as Row[]) ?? []).map((row) => ({
+        ...row,
+        marketName: row.markets?.name ?? null,
+      }));
     },
   });
 }
@@ -673,10 +677,12 @@ export function useSendAnnouncement() {
       audience,
       channel,
       message,
+      marketId,
     }: {
       audience: "all_vendors" | "specific_vendors" | "customers";
       channel: "in_app" | "email" | "sms";
       message: string;
+      marketId?: string;
     }) => {
       if (!organizationId) throw new Error("No organization");
       const { error } = await supabase.from("announcements").insert({
@@ -684,6 +690,7 @@ export function useSendAnnouncement() {
         audience,
         channel,
         message,
+        market_id: marketId || null,
         sent_at: new Date().toISOString(),
       });
       if (error) throw error;

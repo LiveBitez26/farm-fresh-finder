@@ -4,8 +4,19 @@ import { Loader2 } from "lucide-react";
 import { z } from "zod";
 import { Textarea } from "../../../components/ui/textarea";
 import { Button } from "../../../components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
 import { useAuth } from "../../../hooks/use-auth";
-import { useAnnouncements, useSendAnnouncement } from "../../../hooks/use-organization-data";
+import {
+  useAnnouncements,
+  useMarkets,
+  useSendAnnouncement,
+} from "../../../hooks/use-organization-data";
 
 const communicationsSearchSchema = z.object({
   vendor: z.string().optional(),
@@ -85,6 +96,7 @@ function CommunicationsPage() {
   const { profile } = useAuth();
   const hasOrg = Boolean(profile?.organization_id);
   const { data: announcements, isLoading } = useAnnouncements();
+  const { data: markets } = useMarkets();
   const sendAnnouncement = useSendAnnouncement();
   const { vendor } = Route.useSearch();
 
@@ -92,6 +104,7 @@ function CommunicationsPage() {
     vendor ? "specific_vendors" : "all_vendors",
   );
   const [channel, setChannel] = useState<(typeof CHANNELS)[number]["key"]>("in_app");
+  const [marketId, setMarketId] = useState<string>("all");
   const [message, setMessage] = useState(
     vendor
       ? `Hi ${vendor}, `
@@ -105,7 +118,12 @@ function CommunicationsPage() {
 
     if (hasOrg) {
       sendAnnouncement.mutate(
-        { audience, channel, message: text },
+        {
+          audience,
+          channel,
+          message: text,
+          marketId: audience === "customers" && marketId !== "all" ? marketId : undefined,
+        },
         { onSuccess: () => setMessage("") },
       );
     } else {
@@ -172,6 +190,27 @@ function CommunicationsPage() {
             ))}
           </div>
 
+          {audience === "customers" && markets && markets.length > 0 && (
+            <>
+              <label className="mb-1.5 mt-3 block text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Which market?
+              </label>
+              <Select value={marketId} onValueChange={setMarketId}>
+                <SelectTrigger className="border-border bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All markets</SelectItem>
+                  {markets.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
+
           <label className="mb-1.5 mt-3 block text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
             Message
           </label>
@@ -204,8 +243,8 @@ function CommunicationsPage() {
                 >
                   <p className="text-foreground">{a.message}</p>
                   <p className="mt-0.5 text-[11.5px] text-muted-foreground">
-                    {AUDIENCE_LABEL[a.audience]} · {CHANNEL_LABEL[a.channel]} ·{" "}
-                    {formatWhen(a.created_at)}
+                    {AUDIENCE_LABEL[a.audience]} · {CHANNEL_LABEL[a.channel]}
+                    {a.marketName && ` · ${a.marketName}`} · {formatWhen(a.created_at)}
                   </p>
                 </div>
               ))
