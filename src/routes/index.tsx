@@ -17,6 +17,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { formatMoney } from "../lib/currency";
+import { useAuth } from "../hooks/use-auth";
+import {
+  useCreateSubscription,
+  useMyCustomerSubscriptions,
+  useUpdateSubscriptionStatus,
+} from "../hooks/use-customer-data";
 import {
   usePublicMarkets,
   usePublicMarket,
@@ -102,6 +108,7 @@ function App() {
               onBack={() => setScreen("market-detail")}
               cart={cart}
               addCart={() => setCart((c) => c + 1)}
+              onRequireSignIn={() => setTab("profile")}
             />
           )}
           {tab === "cart" && <CartScreen count={cart} />}
@@ -473,14 +480,44 @@ function FarmerScreen({
   onBack,
   cart,
   addCart,
+  onRequireSignIn,
 }: {
   vendorId: string;
   onBack: () => void;
   cart: number;
   addCart: () => void;
+  onRequireSignIn: () => void;
 }) {
+  const { user } = useAuth();
   const { data: vendor, isLoading: vendorLoading } = usePublicVendor(vendorId);
   const { data: products, isLoading: productsLoading } = usePublicVendorProducts(vendorId);
+  const createSubscription = useCreateSubscription();
+  const [subscribingId, setSubscribingId] = useState<string | null>(null);
+  const [subscribedIds, setSubscribedIds] = useState<Set<string>>(new Set());
+
+  function handleSubscribe(product: Product, frequency: "weekly" | "biweekly" | "monthly") {
+    if (!user) {
+      onRequireSignIn();
+      return;
+    }
+    setSubscribingId(product.id);
+    createSubscription.mutate(
+      {
+        organizationId: product.organization_id,
+        vendorId: product.vendor_id,
+        productId: product.id,
+        frequency,
+      },
+      {
+        onSuccess: () => {
+          setSubscribingId(null);
+          setSubscribedIds((prev) => new Set(prev).add(product.id));
+          addCart();
+        },
+        onError: () => setSubscribingId(null),
+      },
+    );
+  }
 
   if (!vendorLoading && !vendor) {
     return (
@@ -594,9 +631,28 @@ function FarmerScreen({
                       </span>
                     </h2>
                     <div className="no-scrollbar -mx-5 mt-3 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:mt-5 md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:px-0">
-                      {subscriptionProducts.map((p) => (
-                        <ProductCard key={p.id} product={p} onSubscribe={addCart} />
-                      ))}
+                      {subscriptionProducts.map((p) =>
+                        subscribedIds.has(p.id) ? (
+                          <div
+                            key={p.id}
+                            className="flex w-[280px] shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-3xl border border-primary/30 bg-moss-soft/60 p-6 text-center"
+                          >
+                            <Repeat className="h-6 w-6 text-primary" />
+                            <p className="text-sm font-semibold text-foreground">{p.name}</p>
+                            <p className="text-xs text-primary">You're subscribed!</p>
+                            <p className="text-[11px] text-muted-foreground">
+                              Manage it anytime from your Profile.
+                            </p>
+                          </div>
+                        ) : (
+                          <ProductCard
+                            key={p.id}
+                            product={p}
+                            submitting={subscribingId === p.id}
+                            onSubscribe={(frequency) => handleSubscribe(p, frequency)}
+                          />
+                        ),
+                      )}
                     </div>
                   </>
                 )}
@@ -650,8 +706,20 @@ function FarmerScreen({
   );
 }
 
-function ProductCard({ product, onSubscribe }: { product: Product; onSubscribe: () => void }) {
+function ProductCard({
+  product,
+  onSubscribe,
+  submitting,
+}: {
+  product: Product;
+  onSubscribe: (frequency: "weekly" | "biweekly" | "monthly") => void;
+  submitting?: boolean;
+}) {
   const frequencies = product.subscription_frequencies ?? [];
+  const [selectedFrequency, setSelectedFrequency] = useState<"weekly" | "biweekly" | "monthly">(
+    frequencies[0] ?? "weekly",
+  );
+
   return (
     <div className="w-[280px] shrink-0 snap-start overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
       <div className="relative flex h-40 items-center justify-center overflow-hidden bg-secondary">
@@ -681,17 +749,26 @@ function ProductCard({ product, onSubscribe }: { product: Product; onSubscribe: 
             style={{ gridTemplateColumns: `repeat(${frequencies.length}, 1fr)` }}
           >
             {frequencies.map((f) => (
-              <span key={f} className="rounded-lg py-2 text-center text-muted-foreground">
+              <button
+                key={f}
+                onClick={() => setSelectedFrequency(f)}
+                className={`rounded-lg py-2 text-center transition ${
+                  selectedFrequency === f
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
                 {FREQUENCY_LABEL[f] ?? f}
-              </span>
+              </button>
             ))}
           </div>
         )}
         <button
-          onClick={onSubscribe}
-          className="mt-4 w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow transition active:scale-[0.98]"
+          onClick={() => onSubscribe(selectedFrequency)}
+          disabled={submitting}
+          className="mt-4 w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow transition active:scale-[0.98] disabled:opacity-60"
         >
-          Subscribe
+          {submitting ? "Subscribing…" : "Subscribe"}
         </button>
         <p className="mt-2 text-center text-[10px] text-muted-foreground">
           Pause or cancel anytime • Pickup at the farm
@@ -735,7 +812,151 @@ function CartScreen({ count }: { count: number }) {
   );
 }
 
+function CustomerAuthForm() {
+  const { signInWithPassword, signUpWithPassword } = useAuth();
+  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-up");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    const result =
+      mode === "sign-in"
+        ? await signInWithPassword(email, password)
+        : await signUpWithPassword(email, password, fullName);
+    setSubmitting(false);
+    if (result.error) setError(result.error);
+  }
+
+  return (
+    <div className="mx-auto mt-6 max-w-sm rounded-2xl border border-border bg-card p-5">
+      <h2 className="font-display text-base font-semibold text-foreground">
+        {mode === "sign-in" ? "Sign in" : "Create your account"}
+      </h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Subscribe to farm boxes and manage them anytime.
+      </p>
+      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+        {mode === "sign-up" && (
+          <input
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Full name"
+            required
+            className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:outline-none"
+          />
+        )}
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          required
+          className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:outline-none"
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          required
+          minLength={6}
+          className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:outline-none"
+        />
+        {error && (
+          <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>
+        )}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow transition active:scale-[0.98] disabled:opacity-60"
+        >
+          {submitting ? "…" : mode === "sign-in" ? "Sign in" : "Create account"}
+        </button>
+      </form>
+      <button
+        onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")}
+        className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground"
+      >
+        {mode === "sign-in" ? "Need an account? Sign up" : "Already have an account? Sign in"}
+      </button>
+    </div>
+  );
+}
+
+function MySubscriptions() {
+  const { data: subscriptions, isLoading } = useMyCustomerSubscriptions();
+  const updateStatus = useUpdateSubscriptionStatus();
+
+  if (isLoading) {
+    return <p className="mt-6 text-center text-sm text-muted-foreground">Loading…</p>;
+  }
+
+  if (!subscriptions || subscriptions.length === 0) {
+    return (
+      <p className="mx-auto mt-6 max-w-sm rounded-2xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
+        No subscriptions yet — find a farmer in Markets and tap Subscribe on one of their boxes.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mx-auto mt-6 max-w-sm space-y-2.5">
+      {subscriptions.map((s) => (
+        <div key={s.id} className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-foreground">{s.productName}</p>
+              <p className="text-xs text-muted-foreground">{s.vendorName}</p>
+            </div>
+            <span className="whitespace-nowrap text-xs font-bold text-primary">
+              {formatMoney(s.price, s.currency)}
+              {s.unit ? ` / ${s.unit}` : ""}
+            </span>
+          </div>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold capitalize text-muted-foreground">
+              {FREQUENCY_LABEL[s.frequency] ?? s.frequency} · {s.status}
+            </span>
+            <div className="flex gap-1.5">
+              {s.status === "active" ? (
+                <button
+                  onClick={() => updateStatus.mutate({ subscriptionId: s.id, status: "paused" })}
+                  className="rounded-full border border-border px-3 py-1 text-[11px] font-semibold text-foreground hover:bg-secondary"
+                >
+                  Pause
+                </button>
+              ) : s.status === "paused" ? (
+                <button
+                  onClick={() => updateStatus.mutate({ subscriptionId: s.id, status: "active" })}
+                  className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20"
+                >
+                  Resume
+                </button>
+              ) : null}
+              {s.status !== "cancelled" && (
+                <button
+                  onClick={() => updateStatus.mutate({ subscriptionId: s.id, status: "cancelled" })}
+                  className="rounded-full border border-destructive/30 px-3 py-1 text-[11px] font-semibold text-destructive hover:bg-destructive/10"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ProfileScreen() {
+  const { user, profile, signOut } = useAuth();
   const { data: organizations } = usePublicOrganizations();
 
   return (
@@ -744,11 +965,29 @@ function ProfileScreen() {
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary">
           <UserIcon className="h-7 w-7" />
         </div>
-        <h1 className="mt-4 font-display text-2xl font-semibold">Your Profile</h1>
+        <h1 className="mt-4 font-display text-2xl font-semibold">
+          {user ? `Hi, ${profile?.full_name ?? "there"}` : "Your Profile"}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Manage subscriptions and your favorite farmers.
         </p>
       </div>
+
+      {user ? (
+        <>
+          <MySubscriptions />
+          <div className="mx-auto mt-4 max-w-sm text-center">
+            <button
+              onClick={() => signOut()}
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              Sign out
+            </button>
+          </div>
+        </>
+      ) : (
+        <CustomerAuthForm />
+      )}
 
       <div className="mx-auto mt-8 max-w-sm space-y-3">
         <a
