@@ -6,6 +6,11 @@ real customer accounts, and wired subscriptions end to end.
 
 ## Needs verification (built, not yet confirmed working by the user)
 
+- **Platform Admin dashboard** (`/admin`) — cross-organization overview
+  and organization management (suspend/reactivate), gated by a new
+  `is_platform_owner` flag on your own profile. Requires manually
+  granting yourself the role via one SQL statement (see setup notes) —
+  there's intentionally no self-serve way to become a platform owner.
 - **Location-based market search** — "Find Farmers Near Me", manual
   city/ZIP entry, distance sorting/badges, and auto-geocoding a
   market's address on save. Requires re-saving each existing market
