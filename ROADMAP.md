@@ -6,6 +6,12 @@ real customer accounts, and wired subscriptions end to end.
 
 ## Needs verification (built, not yet confirmed working by the user)
 
+- **Shareable market link** — real `/market/:slug` page an organizer can
+  copy from Schedule & Booth Map ("Copy Market Link") and post anywhere.
+  Requires re-saving/creating markets to have a slug for existing rows
+  created before this shipped (a migration backfilled existing markets
+  with a generated slug automatically, so this should already work for
+  markets created earlier too — worth double-checking).
 - **Location-based market search** — "Find Farmers Near Me", manual
   city/ZIP entry, distance sorting/badges, and auto-geocoding a
   market's address on save. Requires re-saving each existing market

@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ApplySlugRouteImport } from './routes/apply.$slug'
+import { Route as MarketSlugRouteImport } from './routes/market.$slug'
 import { Route as OrganizerLayoutRouteImport } from './routes/organizer/_layout'
 import { Route as StoreVendorIdRouteImport } from './routes/store.$vendorId'
 import { Route as VendorLayoutRouteImport } from './routes/vendor/_layout'
@@ -49,6 +50,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const ApplySlugRoute = ApplySlugRouteImport.update({
   id: '/apply/$slug',
   path: '/apply/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketSlugRoute = MarketSlugRouteImport.update({
+  id: '/market/$slug',
+  path: '/market/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizerLayoutRoute = OrganizerLayoutRouteImport.update({
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/apply/$slug': typeof ApplySlugRoute
+  '/market/$slug': typeof MarketSlugRoute
   '/organizer': typeof OrganizerLayoutRouteWithChildren
   '/store/$vendorId': typeof StoreVendorIdRoute
   '/vendor': typeof VendorLayoutRouteWithChildren
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/apply/$slug': typeof ApplySlugRoute
+  '/market/$slug': typeof MarketSlugRoute
   '/store/$vendorId': typeof StoreVendorIdRoute
   '/organizer/analytics': typeof OrganizerLayoutAnalyticsRoute
   '/organizer/communications': typeof OrganizerLayoutCommunicationsRoute
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/apply/$slug': typeof ApplySlugRoute
+  '/market/$slug': typeof MarketSlugRoute
   '/organizer/_layout': typeof OrganizerLayoutRouteWithChildren
   '/store/$vendorId': typeof StoreVendorIdRoute
   '/vendor/_layout': typeof VendorLayoutRouteWithChildren
@@ -215,6 +224,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/apply/$slug'
+    | '/market/$slug'
     | '/organizer'
     | '/store/$vendorId'
     | '/vendor'
@@ -238,6 +248,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/apply/$slug'
+    | '/market/$slug'
     | '/store/$vendorId'
     | '/organizer/analytics'
     | '/organizer/communications'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/apply/$slug'
+    | '/market/$slug'
     | '/organizer/_layout'
     | '/store/$vendorId'
     | '/vendor/_layout'
@@ -283,6 +295,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   ApplySlugRoute: typeof ApplySlugRoute
+  MarketSlugRoute: typeof MarketSlugRoute
   OrganizerLayoutRoute: typeof OrganizerLayoutRouteWithChildren
   StoreVendorIdRoute: typeof StoreVendorIdRoute
   VendorLayoutRoute: typeof VendorLayoutRouteWithChildren
@@ -317,6 +330,13 @@ declare module '@tanstack/react-router' {
       path: '/apply/$slug'
       fullPath: '/apply/$slug'
       preLoaderRoute: typeof ApplySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/market/$slug': {
+      id: '/market/$slug'
+      path: '/market/$slug'
+      fullPath: '/market/$slug'
+      preLoaderRoute: typeof MarketSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizer/_layout': {
@@ -492,6 +512,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   ApplySlugRoute: ApplySlugRoute,
+  MarketSlugRoute: MarketSlugRoute,
   OrganizerLayoutRoute: OrganizerLayoutRouteWithChildren,
   StoreVendorIdRoute: StoreVendorIdRoute,
   VendorLayoutRoute: VendorLayoutRouteWithChildren,

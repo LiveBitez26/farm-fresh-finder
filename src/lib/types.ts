@@ -73,6 +73,7 @@ export interface Market {
   id: string;
   organization_id: string;
   name: string;
+  slug: string;
   description: string | null;
   address: string | null;
   city: string | null;

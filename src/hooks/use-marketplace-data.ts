@@ -44,6 +44,33 @@ export function usePublicMarket(marketId: string | undefined) {
   });
 }
 
+/** Look up a market by its public slug — used by the standalone,
+ * shareable /market/:slug page. */
+export function usePublicMarketBySlug(slug: string | undefined) {
+  return useQuery({
+    queryKey: ["marketplace_market_by_slug", slug],
+    enabled: Boolean(slug),
+    queryFn: async (): Promise<
+      (Market & { organizationSlug: string | null; organizationName: string | null }) | null
+    > => {
+      const { data, error } = await supabase
+        .from("markets")
+        .select("*, organizations(slug, name)")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      type Row = Market & { organizations: { slug: string; name: string } | null };
+      const row = data as unknown as Row;
+      return {
+        ...row,
+        organizationSlug: row.organizations?.slug ?? null,
+        organizationName: row.organizations?.name ?? null,
+      };
+    },
+  });
+}
+
 /** Active vendors belonging to the same organization as a given market.
  * (There's no populated vendor<->market join table yet, so this is the
  * best available proxy for "farmers at this market" today.) */

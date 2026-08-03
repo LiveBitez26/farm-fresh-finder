@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "./use-auth";
 import { geocodeAddress } from "../lib/geolocation";
+import { slugify } from "../lib/slug";
 import type {
   ComplianceDocument,
   DocumentStatus,
@@ -1042,6 +1043,7 @@ export function useCreateMarket() {
         .insert({
           organization_id: organizationId,
           name: input.name,
+          slug: slugify(input.name),
           city: input.city || null,
           market_type: input.marketType || null,
         })

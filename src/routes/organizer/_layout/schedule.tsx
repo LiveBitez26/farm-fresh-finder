@@ -566,8 +566,10 @@ function SchedulePage() {
   const [newScheduleOpen, setNewScheduleOpen] = useState(false);
   const [boothLayoutOpen, setBoothLayoutOpen] = useState(false);
   const [editMarketOpen, setEditMarketOpen] = useState(false);
+  const [copiedMarketLink, setCopiedMarketLink] = useState(false);
 
   const selectedSchedule = schedules?.find((s) => s.id === selectedScheduleId) ?? schedules?.[0];
+  const { data: selectedMarketDetails } = useMarketDetails(selectedSchedule?.marketId);
 
   useEffect(() => {
     if (!selectedScheduleId && schedules && schedules.length > 0) {
@@ -739,7 +741,22 @@ function SchedulePage() {
               </span>
             </h3>
             {hasLiveData ? (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                {selectedMarketDetails?.slug && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-border"
+                    onClick={() => {
+                      const url = `${window.location.origin}/market/${selectedMarketDetails.slug}`;
+                      navigator.clipboard.writeText(url);
+                      setCopiedMarketLink(true);
+                      setTimeout(() => setCopiedMarketLink(false), 2000);
+                    }}
+                  >
+                    {copiedMarketLink ? "Copied!" : "Copy Market Link"}
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
