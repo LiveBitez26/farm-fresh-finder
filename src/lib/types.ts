@@ -81,6 +81,8 @@ export interface Market {
   country: string | null;
   hero_image_url: string | null;
   market_type: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Loader2, Plus, Settings2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Plus, Settings2, X, Pencil, ImagePlus } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
+import { Textarea } from "../../../components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -28,8 +29,10 @@ import {
   useCreateMarket,
   useCreateSchedule,
   useDeleteBooth,
+  useMarketDetails,
   useMarkets,
   useSchedules,
+  useUpdateMarket,
   useVendors,
 } from "../../../hooks/use-organization-data";
 
@@ -372,6 +375,187 @@ function BoothLayoutDialog({
   );
 }
 
+function EditMarketDialog({
+  open,
+  onOpenChange,
+  marketId,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  marketId: string | undefined;
+}) {
+  const { data: market, isLoading } = useMarketDetails(marketId);
+  const updateMarket = useUpdateMarket();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [region, setRegion] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [country, setCountry] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [heroImageFile, setHeroImageFile] = useState<File | undefined>(undefined);
+  const [heroPreview, setHeroPreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (market) {
+      setName(market.name);
+      setDescription(market.description ?? "");
+      setAddress(market.address ?? "");
+      setCity(market.city ?? "");
+      setRegion(market.region ?? "");
+      setPostalCode(market.postal_code ?? "");
+      setCountry(market.country ?? "");
+      setContactEmail(market.contact_email ?? "");
+      setContactPhone(market.contact_phone ?? "");
+      setHeroPreview(market.hero_image_url ?? null);
+      setHeroImageFile(undefined);
+    }
+  }, [market]);
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setHeroImageFile(file);
+    setHeroPreview(URL.createObjectURL(file));
+  }
+
+  function handleSave() {
+    setError(null);
+    if (!marketId || !name.trim()) {
+      setError("Enter a market name.");
+      return;
+    }
+    updateMarket.mutate(
+      {
+        marketId,
+        name: name.trim(),
+        description: description.trim(),
+        address: address.trim(),
+        city: city.trim(),
+        region: region.trim(),
+        postalCode: postalCode.trim(),
+        country: country.trim(),
+        contactEmail: contactEmail.trim(),
+        contactPhone: contactPhone.trim(),
+        heroImageFile,
+      },
+      {
+        onSuccess: () => onOpenChange(false),
+        onError: (e: Error) => setError(e.message),
+      },
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-[family-name:var(--font-display)]">
+            Edit Market Details
+          </DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">Loading…</p>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <Label className="mb-1.5 block">Market photo</Label>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-32 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-background text-muted-foreground hover:border-primary hover:text-primary"
+              >
+                {heroPreview ? (
+                  <img src={heroPreview} alt="Market" className="h-full w-full object-cover" />
+                ) : (
+                  <ImagePlus className="h-6 w-6" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Market name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Bio / description</Label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Tell customers what makes this market special…"
+                className="min-h-[80px]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Street address</Label>
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>City</Label>
+                <Input value={city} onChange={(e) => setCity(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>State / Region</Label>
+                <Input value={region} onChange={(e) => setRegion(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Postal code</Label>
+                <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Country</Label>
+                <Input value={country} onChange={(e) => setCountry(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Contact email</Label>
+                <Input
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder="market@example.com"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Contact phone</Label>
+                <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+              </div>
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button onClick={handleSave} disabled={updateMarket.isPending || isLoading}>
+            {updateMarket.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save market details
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function SchedulePage() {
   const { profile } = useAuth();
   const hasOrg = Boolean(profile?.organization_id);
@@ -381,6 +565,7 @@ function SchedulePage() {
   const [mockDay, setMockDay] = useState<DayKey>("Sat");
   const [newScheduleOpen, setNewScheduleOpen] = useState(false);
   const [boothLayoutOpen, setBoothLayoutOpen] = useState(false);
+  const [editMarketOpen, setEditMarketOpen] = useState(false);
 
   const selectedSchedule = schedules?.find((s) => s.id === selectedScheduleId) ?? schedules?.[0];
 
@@ -554,15 +739,26 @@ function SchedulePage() {
               </span>
             </h3>
             {hasLiveData ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-border"
-                onClick={() => setBoothLayoutOpen(true)}
-              >
-                <Settings2 className="mr-2 h-3.5 w-3.5" />
-                Edit layout
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-border"
+                  onClick={() => setEditMarketOpen(true)}
+                >
+                  <Pencil className="mr-2 h-3.5 w-3.5" />
+                  Edit Market
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-border"
+                  onClick={() => setBoothLayoutOpen(true)}
+                >
+                  <Settings2 className="mr-2 h-3.5 w-3.5" />
+                  Edit layout
+                </Button>
+              </div>
             ) : (
               <Button size="sm" variant="outline" className="border-border">
                 Save layout
@@ -675,12 +871,19 @@ function SchedulePage() {
 
       {newScheduleDialog}
       {hasLiveData && (
-        <BoothLayoutDialog
-          open={boothLayoutOpen}
-          onOpenChange={setBoothLayoutOpen}
-          marketId={selectedSchedule?.marketId}
-          marketName={selectedSchedule?.marketName}
-        />
+        <>
+          <BoothLayoutDialog
+            open={boothLayoutOpen}
+            onOpenChange={setBoothLayoutOpen}
+            marketId={selectedSchedule?.marketId}
+            marketName={selectedSchedule?.marketName}
+          />
+          <EditMarketDialog
+            open={editMarketOpen}
+            onOpenChange={setEditMarketOpen}
+            marketId={selectedSchedule?.marketId}
+          />
+        </>
       )}
     </div>
   );

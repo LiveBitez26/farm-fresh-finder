@@ -5,6 +5,7 @@ import type {
   ComplianceDocument,
   DocumentStatus,
   DocumentType,
+  Market,
   Organization,
   Product,
   Vendor,
@@ -882,6 +883,81 @@ export function useMarkets() {
 }
 
 /** Create a new market. */
+/** Full details for a single market (organizer-side, regardless of
+ * is_active state) — used to populate the Edit Market dialog. */
+export function useMarketDetails(marketId: string | undefined) {
+  const organizationId = useOrganizationId();
+  return useQuery({
+    queryKey: ["market_details", organizationId, marketId],
+    enabled: Boolean(organizationId && marketId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("markets")
+        .select("*")
+        .eq("id", marketId)
+        .eq("organization_id", organizationId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Market | null;
+    },
+  });
+}
+
+/** Full edit of an existing market's public-facing details. */
+export function useUpdateMarket() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      marketId: string;
+      name: string;
+      description: string;
+      address: string;
+      city: string;
+      region: string;
+      postalCode: string;
+      country: string;
+      contactEmail: string;
+      contactPhone: string;
+      heroImageFile?: File;
+    }) => {
+      let heroImageUrl: string | undefined;
+      if (input.heroImageFile) {
+        const path = `${input.marketId}/${Date.now()}-${input.heroImageFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("market-photos")
+          .upload(path, input.heroImageFile);
+        if (uploadError) throw uploadError;
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("market-photos").getPublicUrl(path);
+        heroImageUrl = publicUrl;
+      }
+
+      const { error } = await supabase
+        .from("markets")
+        .update({
+          name: input.name,
+          description: input.description || null,
+          address: input.address || null,
+          city: input.city || null,
+          region: input.region || null,
+          postal_code: input.postalCode || null,
+          country: input.country || null,
+          contact_email: input.contactEmail || null,
+          contact_phone: input.contactPhone || null,
+          ...(heroImageUrl ? { hero_image_url: heroImageUrl } : {}),
+        })
+        .eq("id", input.marketId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["markets"] });
+      queryClient.invalidateQueries({ queryKey: ["marketplace_markets"] });
+      queryClient.invalidateQueries({ queryKey: ["marketplace_market"] });
+    },
+  });
+}
+
 export function useCreateMarket() {
   const organizationId = useOrganizationId();
   const queryClient = useQueryClient();
