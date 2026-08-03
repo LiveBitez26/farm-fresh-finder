@@ -64,6 +64,17 @@ real customer accounts, and wired subscriptions end to end.
 11. Favoriting farmers (mentioned in Profile copy, never built).
 12. CSV/report exports for the Finance Manager role.
 13. Automated tests (none exist yet — matters more as the codebase grows).
+14. **Per-organization custom domains** (e.g. an org's own
+    `ohiovalleymarkets.com` pointing directly to their market page,
+    like Shopify's custom-domain model). Genuinely worth doing
+    eventually, but real infrastructure work — Vercel Domains API
+    integration, SSL issuance per domain, DNS walkthroughs per
+    organizer — closer in scope to a whole new module than a small
+    feature. Natural fit as a paid-tier upsell once real billing
+    exists (`organizations.subscription_plan` already exists in the
+    schema, unused). Prioritize the *platform's own* custom domain
+    first (item 10) — a clean `yourdomain.com/market/slug` link
+    already reads as professional without needing per-org domains.
 
 ## Already fully real (for context, not remaining work)
 
