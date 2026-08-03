@@ -4,6 +4,14 @@ This tracks known remaining work, roughly in priority order. Last updated
 after the Phase 3 session that connected the Customer Marketplace, added
 real customer accounts, and wired subscriptions end to end.
 
+## Needs verification (built, not yet confirmed working by the user)
+
+- **Location-based market search** — "Find Farmers Near Me", manual
+  city/ZIP entry, distance sorting/badges, and auto-geocoding a
+  market's address on save. Requires re-saving each existing market
+  through Edit Market once to trigger geocoding retroactively (it only
+  runs on save, not for markets that existed before this shipped).
+
 ## Next up (the big one)
 
 - **Stripe Connect + real Orders** — the last major piece making the
