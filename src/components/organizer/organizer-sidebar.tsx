@@ -11,7 +11,6 @@ import {
   Settings,
   Leaf,
   LogOut,
-  ChevronsUpDown,
 } from "lucide-react";
 import {
   Sidebar,
@@ -90,13 +89,16 @@ export function OrganizerSidebar() {
           </div>
         </div>
 
-        <button className="flex items-center justify-between rounded-lg border border-sidebar-border bg-sidebar-foreground/5 px-2.5 py-2 text-left text-xs text-sidebar-foreground transition-colors hover:bg-sidebar-foreground/10 group-data-[collapsible=icon]:hidden">
+        <Link
+          to="/organizer/settings"
+          className="flex items-center justify-between rounded-lg border border-sidebar-border bg-sidebar-foreground/5 px-2.5 py-2 text-left text-xs text-sidebar-foreground transition-colors hover:bg-sidebar-foreground/10 group-data-[collapsible=icon]:hidden"
+        >
           <span className="truncate">
             <span className="text-sidebar-foreground/50">Org · </span>
             <span className="font-medium">{orgName}</span>
           </span>
-          <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 text-sidebar-foreground/50" />
-        </button>
+          <Settings className="ml-2 h-3.5 w-3.5 shrink-0 text-sidebar-foreground/50" />
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
