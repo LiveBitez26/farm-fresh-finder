@@ -13,8 +13,6 @@ import {
   Loader2,
   ImageOff,
   Repeat,
-  LogIn,
-  ChevronRight,
 } from "lucide-react";
 import { formatMoney } from "../lib/currency";
 import {
@@ -37,7 +35,6 @@ import {
   usePublicMarketAnnouncements,
   usePublicVendor,
   usePublicVendorProducts,
-  usePublicOrganizations,
 } from "../hooks/use-marketplace-data";
 import type { Product } from "../lib/types";
 
@@ -531,6 +528,24 @@ function MarketDetail({
                 onClick={() => onOpenFarmer(v.id)}
               />
             ))}
+          </div>
+        )}
+
+        {market?.organizationSlug && (
+          <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-5 text-center">
+            <Leaf className="mx-auto h-5 w-5 text-primary" />
+            <p className="mt-2 text-sm font-semibold text-foreground">
+              Grow or make something local?
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Apply to sell at {market.name}, run by {market.organizationName}.
+            </p>
+            <a
+              href={`/apply/${market.organizationSlug}`}
+              className="mt-3 inline-block rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+            >
+              Apply to Sell Here
+            </a>
           </div>
         )}
       </div>
@@ -1055,7 +1070,6 @@ function MySubscriptions() {
 
 function ProfileScreen() {
   const { user, profile, signOut } = useAuth();
-  const { data: organizations } = usePublicOrganizations();
 
   return (
     <div className="px-5 pt-16">
@@ -1086,56 +1100,6 @@ function ProfileScreen() {
       ) : (
         <CustomerAuthForm />
       )}
-
-      <div className="mx-auto mt-8 max-w-sm space-y-3">
-        <a
-          href="/login"
-          className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm transition hover:bg-secondary"
-        >
-          <span className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-secondary text-primary">
-              <LogIn className="h-4 w-4" />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold">Market Organizer or Vendor?</span>
-              <span className="block text-[11px] text-muted-foreground">
-                Sign in to your console
-              </span>
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </a>
-
-        {organizations && organizations.length > 0 && (
-          <div>
-            <p className="mb-2 mt-6 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Are you a farmer?
-            </p>
-            {organizations.map((org) => (
-              <a
-                key={org.id}
-                href={`/apply/${org.slug}`}
-                className="mb-2 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm transition hover:bg-secondary"
-              >
-                <span className="flex items-center gap-3">
-                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                    <Leaf className="h-4 w-4" />
-                  </span>
-                  <span>
-                    <span className="block text-sm font-semibold">
-                      Apply to sell with {org.name}
-                    </span>
-                    <span className="block text-[11px] text-muted-foreground">
-                      Submit a vendor application
-                    </span>
-                  </span>
-                </span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -1167,16 +1131,10 @@ function TopNav({ tab, setTab, cart }: { tab: Tab; setTab: (t: Tab) => void; car
         <div className="flex items-center gap-3">
           <button
             onClick={() => setTab("profile")}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
-          >
-            Sell With Us
-          </button>
-          <a
-            href="/login"
             className="text-sm font-semibold text-muted-foreground hover:text-foreground"
           >
             Sign in
-          </a>
+          </button>
           <button
             onClick={() => setTab("cart")}
             className="relative grid h-10 w-10 place-items-center rounded-full border border-border bg-background text-foreground transition hover:bg-secondary"
@@ -1239,16 +1197,16 @@ function Footer({ setTab }: { setTab: (t: Tab) => void }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               For Farmers
             </p>
-            <ul className="mt-3 space-y-2 text-sm">
-              <li>
-                <button
-                  onClick={() => setTab("profile")}
-                  className="text-foreground hover:text-primary"
-                >
-                  Apply to Sell
-                </button>
-              </li>
-            </ul>
+            <p className="mt-3 max-w-[180px] text-sm text-muted-foreground">
+              Find your market in{" "}
+              <button
+                onClick={() => setTab("markets")}
+                className="text-foreground underline hover:text-primary"
+              >
+                Markets
+              </button>{" "}
+              to apply and sell there.
+            </p>
           </div>
 
           <div>

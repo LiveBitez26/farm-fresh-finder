@@ -23,14 +23,23 @@ export function usePublicMarket(marketId: string | undefined) {
   return useQuery({
     queryKey: ["marketplace_market", marketId],
     enabled: Boolean(marketId),
-    queryFn: async (): Promise<Market | null> => {
+    queryFn: async (): Promise<
+      (Market & { organizationSlug: string | null; organizationName: string | null }) | null
+    > => {
       const { data, error } = await supabase
         .from("markets")
-        .select("*")
+        .select("*, organizations(slug, name)")
         .eq("id", marketId)
         .maybeSingle();
       if (error) throw error;
-      return (data as Market) ?? null;
+      if (!data) return null;
+      type Row = Market & { organizations: { slug: string; name: string } | null };
+      const row = data as unknown as Row;
+      return {
+        ...row,
+        organizationSlug: row.organizations?.slug ?? null,
+        organizationName: row.organizations?.name ?? null,
+      };
     },
   });
 }
