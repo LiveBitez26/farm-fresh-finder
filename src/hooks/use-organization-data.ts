@@ -701,6 +701,56 @@ export function useSendAnnouncement() {
   });
 }
 
+/** Edit an existing announcement's message/audience/channel/market. */
+export function useUpdateAnnouncement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      announcementId,
+      audience,
+      channel,
+      message,
+      marketId,
+    }: {
+      announcementId: string;
+      audience: "all_vendors" | "specific_vendors" | "customers";
+      channel: "in_app" | "email" | "sms";
+      message: string;
+      marketId?: string;
+    }) => {
+      const { error } = await supabase
+        .from("announcements")
+        .update({
+          audience,
+          channel,
+          message,
+          market_id: marketId || null,
+        })
+        .eq("id", announcementId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["announcements"] });
+      queryClient.invalidateQueries({ queryKey: ["marketplace_market_announcements"] });
+    },
+  });
+}
+
+/** Delete an announcement. */
+export function useDeleteAnnouncement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (announcementId: string) => {
+      const { error } = await supabase.from("announcements").delete().eq("id", announcementId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["announcements"] });
+      queryClient.invalidateQueries({ queryKey: ["marketplace_market_announcements"] });
+    },
+  });
+}
+
 /** Products belonging to a specific vendor (shown in the Vendor Management
  * drawer's Products tab). */
 export function useProductsForVendor(vendorId: string | undefined) {
