@@ -96,6 +96,33 @@ export function usePublicVendorProducts(vendorId: string | undefined) {
   });
 }
 
+/** A market's upcoming scheduled dates — shown to customers so they
+ * actually know when the market is open. */
+export function usePublicMarketSchedules(marketId: string | undefined) {
+  return useQuery({
+    queryKey: ["marketplace_market_schedules", marketId],
+    enabled: Boolean(marketId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("schedules")
+        .select("id, event_date, start_time, end_time")
+        .eq("market_id", marketId)
+        .gte("event_date", new Date().toISOString().slice(0, 10))
+        .order("event_date", { ascending: true })
+        .limit(5);
+      if (error) throw error;
+      return (
+        (data as {
+          id: string;
+          event_date: string;
+          start_time: string | null;
+          end_time: string | null;
+        }[]) ?? []
+      );
+    },
+  });
+}
+
 /** Active organizations, for the marketplace's 'Apply to sell here'
  * links — organization name/slug are public directory info. */
 export function usePublicOrganizations() {

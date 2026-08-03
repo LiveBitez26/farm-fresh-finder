@@ -21,6 +21,7 @@ import {
   usePublicMarkets,
   usePublicMarket,
   usePublicMarketVendors,
+  usePublicMarketSchedules,
   usePublicVendor,
   usePublicVendorProducts,
   usePublicOrganizations,
@@ -39,6 +40,23 @@ const FREQUENCY_LABEL: Record<string, string> = {
   biweekly: "Bi-weekly",
   monthly: "Monthly",
 };
+
+function formatScheduleDate(dateStr: string) {
+  return new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatScheduleTime(time: string | null) {
+  if (!time) return null;
+  const [h, m] = time.split(":");
+  const hour = Number(h);
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${displayHour}${m === "00" ? "" : `:${m}`} ${period}`;
+}
 
 function App() {
   const [screen, setScreen] = useState<Screen>("markets");
@@ -242,6 +260,7 @@ function MarketDetail({
 }) {
   const { data: market, isLoading: marketLoading } = usePublicMarket(marketId);
   const { data: vendors, isLoading: vendorsLoading } = usePublicMarketVendors(marketId);
+  const { data: schedules, isLoading: schedulesLoading } = usePublicMarketSchedules(marketId);
 
   if (!marketLoading && !market) {
     return (
@@ -307,12 +326,53 @@ function MarketDetail({
                 {market?.description && (
                   <p className="text-xs text-muted-foreground md:text-sm">{market.description}</p>
                 )}
+                {(market?.contact_email || market?.contact_phone) && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {[market.contact_email, market.contact_phone].filter(Boolean).join(" · ")}
+                  </p>
+                )}
               </div>
               <div className="ml-auto flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                 <Users className="h-3.5 w-3.5" />
                 {(vendors ?? []).length} farmer{(vendors ?? []).length === 1 ? "" : "s"}
               </div>
             </div>
+          </div>
+        )}
+
+        <h2 className="mt-6 font-display text-lg font-semibold md:mt-8 md:text-2xl">
+          Upcoming Market Days
+        </h2>
+        {schedulesLoading ? (
+          <div className="mt-3 flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading…
+          </div>
+        ) : (schedules ?? []).length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-dashed border-border bg-card p-5 text-center text-sm text-muted-foreground">
+            No upcoming dates scheduled yet — check back soon.
+          </p>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {schedules!.map((s) => {
+              const start = formatScheduleTime(s.start_time);
+              const end = formatScheduleTime(s.end_time);
+              return (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3"
+                >
+                  <span className="text-sm font-semibold text-foreground">
+                    {formatScheduleDate(s.event_date)}
+                  </span>
+                  {start && end && (
+                    <span className="text-xs text-muted-foreground">
+                      {start} – {end}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
