@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "./use-auth";
+import { geocodeAddress } from "../lib/geolocation";
 import type {
   ComplianceDocument,
   DocumentStatus,
@@ -990,6 +991,20 @@ export function useUpdateMarket() {
         heroImageUrl = publicUrl;
       }
 
+      // Auto-geocode the address in the background so the market shows up
+      // correctly in "near me" search — the organizer never has to think
+      // about coordinates directly.
+      const addressParts = [
+        input.address,
+        input.city,
+        input.region,
+        input.postalCode,
+        input.country,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      const coords = addressParts ? await geocodeAddress(addressParts) : null;
+
       const { error } = await supabase
         .from("markets")
         .update({
@@ -1002,6 +1017,7 @@ export function useUpdateMarket() {
           country: input.country || null,
           contact_email: input.contactEmail || null,
           contact_phone: input.contactPhone || null,
+          ...(coords ? { latitude: coords.latitude, longitude: coords.longitude } : {}),
           ...(heroImageUrl ? { hero_image_url: heroImageUrl } : {}),
         })
         .eq("id", input.marketId);

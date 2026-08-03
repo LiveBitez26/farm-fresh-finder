@@ -67,5 +67,9 @@ location/contact), Communication Hub (send/edit/delete, market-scoped),
 two vendor onboarding paths (public application + organizer invite),
 real file storage (documents, product photos, vendor photos, market
 photos), the Marketplace showing real markets/vendors/products/schedules/
-announcements with a proper desktop nav + footer, and real customer
-accounts with persisted, manageable subscriptions.
+announcements with a proper desktop nav + footer, real customer accounts
+with persisted, manageable subscriptions, and location-based market
+search ("Find Farmers Near Me" using the browser's geolocation, or
+manual city/ZIP entry, both via free OpenStreetMap geocoding — no API
+key/paid service required — with markets auto-geocoded from their
+address whenever an organizer saves one via Edit Market).

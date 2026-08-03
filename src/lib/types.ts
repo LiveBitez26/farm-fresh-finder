@@ -83,6 +83,8 @@ export interface Market {
   market_type: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  latitude: number | null;
+  longitude: number | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

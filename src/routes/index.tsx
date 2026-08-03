@@ -17,6 +17,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { formatMoney } from "../lib/currency";
+import {
+  geocodeAddress,
+  getBrowserLocation,
+  distanceInMiles,
+  formatDistance,
+} from "../lib/geolocation";
 import { useAuth } from "../hooks/use-auth";
 import {
   useCreateSubscription,
@@ -129,10 +135,59 @@ function App() {
 function MarketsScreen({ onOpen }: { onOpen: (marketId: string) => void }) {
   const { data: markets, isLoading } = usePublicMarkets();
   const [search, setSearch] = useState("");
+  const [addressInput, setAddressInput] = useState("");
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(
+    null,
+  );
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  async function handleUseMyLocation() {
+    setLocationError(null);
+    setLocating(true);
+    try {
+      const coords = await getBrowserLocation();
+      setUserLocation(coords);
+    } catch (e) {
+      setLocationError(e instanceof Error ? e.message : "Couldn't get your location.");
+    } finally {
+      setLocating(false);
+    }
+  }
+
+  async function handleAddressSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!addressInput.trim()) return;
+    setLocationError(null);
+    setLocating(true);
+    const coords = await geocodeAddress(addressInput);
+    setLocating(false);
+    if (!coords) {
+      setLocationError("Couldn't find that address — try a city, ZIP, or full address.");
+      return;
+    }
+    setUserLocation(coords);
+  }
 
   const filtered = (markets ?? []).filter((m) =>
     `${m.name} ${m.city ?? ""}`.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const withDistance = filtered.map((m) => ({
+    market: m,
+    distance:
+      userLocation && m.latitude != null && m.longitude != null
+        ? distanceInMiles(userLocation, { latitude: m.latitude, longitude: m.longitude })
+        : null,
+  }));
+
+  const sorted = userLocation
+    ? [...withDistance].sort((a, b) => {
+        if (a.distance == null) return 1;
+        if (b.distance == null) return -1;
+        return a.distance - b.distance;
+      })
+    : withDistance;
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -162,7 +217,42 @@ function MarketsScreen({ onOpen }: { onOpen: (marketId: string) => void }) {
       </div>
 
       <div className="px-5 pt-6 md:px-0 md:pt-10">
-        <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+        <button
+          onClick={handleUseMyLocation}
+          disabled={locating}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.99] disabled:opacity-60"
+        >
+          <MapPin className="h-4 w-4" />
+          {locating ? "Finding you…" : userLocation ? "Update my location" : "Find Farmers Near Me"}
+        </button>
+
+        <form
+          onSubmit={handleAddressSearch}
+          className="mt-3 flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm"
+        >
+          <MapPin className="h-4 w-4 text-muted-foreground" />
+          <input
+            value={addressInput}
+            onChange={(e) => setAddressInput(e.target.value)}
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            placeholder="Or enter your city or ZIP code"
+          />
+          <button
+            type="submit"
+            className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground"
+          >
+            Search
+          </button>
+        </form>
+
+        {locationError && <p className="mt-2 text-xs text-destructive">{locationError}</p>}
+        {userLocation && (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Showing markets sorted by distance · Location data via OpenStreetMap
+          </p>
+        )}
+
+        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
           <Search className="h-5 w-5 text-muted-foreground" />
           <input
             value={search}
@@ -181,7 +271,7 @@ function MarketsScreen({ onOpen }: { onOpen: (marketId: string) => void }) {
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading markets…
           </div>
-        ) : filtered.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center">
             <Store className="mx-auto h-8 w-8 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium text-foreground">No markets found yet</p>
@@ -191,13 +281,14 @@ function MarketsScreen({ onOpen }: { onOpen: (marketId: string) => void }) {
           </div>
         ) : (
           <div className="space-y-4 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 lg:grid-cols-3">
-            {filtered.map((m) => (
+            {sorted.map(({ market: m, distance }) => (
               <MarketCard
                 key={m.id}
                 title={m.name}
                 image={m.hero_image_url}
                 city={m.city}
                 marketType={m.market_type}
+                distanceLabel={distance != null ? formatDistance(distance) : null}
                 onClick={() => onOpen(m.id)}
               />
             ))}
@@ -213,12 +304,14 @@ function MarketCard({
   image,
   city,
   marketType,
+  distanceLabel,
   onClick,
 }: {
   title: string;
   image: string | null;
   city: string | null;
   marketType: string | null;
+  distanceLabel?: string | null;
   onClick?: () => void;
 }) {
   return (
@@ -237,6 +330,11 @@ function MarketCard({
           <div className="flex h-full w-full items-center justify-center">
             <Leaf className="h-8 w-8 text-white/70" />
           </div>
+        )}
+        {distanceLabel && (
+          <span className="absolute top-3 right-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow backdrop-blur">
+            {distanceLabel}
+          </span>
         )}
       </div>
       <div className="p-4">
