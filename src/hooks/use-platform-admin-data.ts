@@ -120,6 +120,24 @@ export function useOrganizationMarkets(organizationId: string | undefined) {
   });
 }
 
+/** Real vendors belonging to a specific organization, for the admin
+ * Organizations drawer's vendor list. */
+export function useOrganizationVendors(organizationId: string | undefined) {
+  return useQuery({
+    queryKey: ["admin_organization_vendors", organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id, business_name, product_categories, status")
+        .eq("organization_id", organizationId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 /** Every organization on the platform, with vendor/market counts, for
  * the admin Organizations list. */
 export function useAllOrganizations() {

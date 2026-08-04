@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, Loader2, Store } from "lucide-react";
+import { Search, Loader2, Store, Users } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -22,6 +22,7 @@ import {
 import {
   useAllOrganizations,
   useOrganizationMarkets,
+  useOrganizationVendors,
   useToggleOrganizationActive,
 } from "../../../hooks/use-platform-admin-data";
 
@@ -55,6 +56,7 @@ function AdminOrganizationsPage() {
 
   const selected = (organizations ?? []).find((o) => o.id === selectedId) ?? null;
   const { data: markets, isLoading: marketsLoading } = useOrganizationMarkets(selected?.id);
+  const { data: vendors, isLoading: vendorsLoading } = useOrganizationVendors(selected?.id);
 
   return (
     <div>
@@ -238,6 +240,44 @@ function AdminOrganizationsPage() {
                           className="text-[10px]"
                         >
                           {m.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="mb-2 mt-4 text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Vendors
+                </p>
+                {vendorsLoading ? (
+                  <p className="py-3 text-center text-xs text-muted-foreground">Loading…</p>
+                ) : (vendors ?? []).length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border bg-secondary/40 px-3 py-4 text-center text-xs text-muted-foreground">
+                    No vendors yet.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {vendors!.map((v) => (
+                      <div
+                        key={v.id}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <div>
+                            <p className="text-[13px] font-medium text-foreground">
+                              {v.business_name}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {(v.product_categories ?? []).join(", ") || "No categories set"}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge
+                          variant={v.status === "active" ? "default" : "secondary"}
+                          className="text-[10px] capitalize"
+                        >
+                          {v.status}
                         </Badge>
                       </div>
                     ))}
