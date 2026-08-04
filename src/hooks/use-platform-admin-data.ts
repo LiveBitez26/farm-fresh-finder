@@ -102,6 +102,24 @@ export function usePlanDistribution() {
   });
 }
 
+/** Real markets belonging to a specific organization, for the admin
+ * Organizations drawer's market list. */
+export function useOrganizationMarkets(organizationId: string | undefined) {
+  return useQuery({
+    queryKey: ["admin_organization_markets", organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("markets")
+        .select("id, name, city, market_type, is_active, slug")
+        .eq("organization_id", organizationId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 /** Every organization on the platform, with vendor/market counts, for
  * the admin Organizations list. */
 export function useAllOrganizations() {

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Store } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -21,6 +21,7 @@ import {
 } from "../../../components/ui/sheet";
 import {
   useAllOrganizations,
+  useOrganizationMarkets,
   useToggleOrganizationActive,
 } from "../../../hooks/use-platform-admin-data";
 
@@ -53,6 +54,7 @@ function AdminOrganizationsPage() {
   }, [organizations, plan, search]);
 
   const selected = (organizations ?? []).find((o) => o.id === selectedId) ?? null;
+  const { data: markets, isLoading: marketsLoading } = useOrganizationMarkets(selected?.id);
 
   return (
     <div>
@@ -204,6 +206,43 @@ function AdminOrganizationsPage() {
                     {selected.is_active ? "Active" : "Suspended"}
                   </Badge>
                 </div>
+
+                <p className="mb-2 mt-4 text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Markets
+                </p>
+                {marketsLoading ? (
+                  <p className="py-3 text-center text-xs text-muted-foreground">Loading…</p>
+                ) : (markets ?? []).length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border bg-secondary/40 px-3 py-4 text-center text-xs text-muted-foreground">
+                    No markets yet.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {markets!.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Store className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <div>
+                            <p className="text-[13px] font-medium text-foreground">{m.name}</p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {[m.city, m.market_type].filter(Boolean).join(" · ") ||
+                                "No details set"}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge
+                          variant={m.is_active ? "default" : "secondary"}
+                          className="text-[10px]"
+                        >
+                          {m.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <Button
                   className="mt-5 w-full"
