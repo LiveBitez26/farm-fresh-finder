@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, Loader2, Store, Users } from "lucide-react";
+import { Search, Loader2, Store, Users, UserCircle } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -22,6 +22,7 @@ import {
 import {
   useAllOrganizations,
   useOrganizationMarkets,
+  useOrganizationStaffForAdmin,
   useOrganizationVendors,
   useToggleOrganizationActive,
 } from "../../../hooks/use-platform-admin-data";
@@ -31,6 +32,14 @@ export const Route = createFileRoute("/admin/_layout/organizations")({
 });
 
 const PLAN_TABS = ["all", "trial", "growth", "enterprise"] as const;
+
+const ROLE_LABEL: Record<string, string> = {
+  platform_owner: "Platform Owner",
+  org_owner: "Organization Owner",
+  market_manager: "Market Manager",
+  compliance_manager: "Compliance Manager",
+  finance_manager: "Finance Manager",
+};
 
 function planLabel(plan: string) {
   if (plan === "trial") return "Trial";
@@ -57,6 +66,7 @@ function AdminOrganizationsPage() {
   const selected = (organizations ?? []).find((o) => o.id === selectedId) ?? null;
   const { data: markets, isLoading: marketsLoading } = useOrganizationMarkets(selected?.id);
   const { data: vendors, isLoading: vendorsLoading } = useOrganizationVendors(selected?.id);
+  const { data: staff, isLoading: staffLoading } = useOrganizationStaffForAdmin(selected?.id);
 
   return (
     <div>
@@ -278,6 +288,34 @@ function AdminOrganizationsPage() {
                           className="text-[10px] capitalize"
                         >
                           {v.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="mb-2 mt-4 text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Staff
+                </p>
+                {staffLoading ? (
+                  <p className="py-3 text-center text-xs text-muted-foreground">Loading…</p>
+                ) : (staff ?? []).length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border bg-secondary/40 px-3 py-4 text-center text-xs text-muted-foreground">
+                    No staff found.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {staff!.map((s) => (
+                      <div
+                        key={s.id}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <UserCircle className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <p className="text-[13px] font-medium text-foreground">{s.name}</p>
+                        </div>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {ROLE_LABEL[s.role] ?? s.role}
                         </Badge>
                       </div>
                     ))}

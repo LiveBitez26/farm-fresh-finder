@@ -138,6 +138,32 @@ export function useOrganizationVendors(organizationId: string | undefined) {
   });
 }
 
+/** Real staff belonging to a specific organization, for the admin
+ * Organizations drawer's staff list. */
+export function useOrganizationStaffForAdmin(organizationId: string | undefined) {
+  return useQuery({
+    queryKey: ["admin_organization_staff", organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("organization_members")
+        .select("id, role, profiles(full_name, email)")
+        .eq("organization_id", organizationId);
+      if (error) throw error;
+      type Row = {
+        id: string;
+        role: string;
+        profiles: { full_name: string | null; email: string | null } | null;
+      };
+      return ((data as unknown as Row[]) ?? []).map((row) => ({
+        id: row.id,
+        role: row.role,
+        name: row.profiles?.full_name || row.profiles?.email || "Unknown",
+      }));
+    },
+  });
+}
+
 /** Every organization on the platform, with vendor/market counts, for
  * the admin Organizations list. */
 export function useAllOrganizations() {
