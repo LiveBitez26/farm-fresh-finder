@@ -99,7 +99,7 @@ function VendorPortalLayout() {
   const { data: vendor, isLoading: vendorLoading } = useMyVendor();
 
   if (isSupabaseConfigured && !isLoading && !user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" search={{ redirect: "/vendor" }} />;
   }
 
   if (isLoading || vendorLoading) {

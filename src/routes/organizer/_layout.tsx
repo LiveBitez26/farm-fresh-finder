@@ -15,7 +15,7 @@ function OrganizerLayout() {
   // While Supabase isn't wired up yet, let the console render in "preview
   // mode" with mock data rather than blocking on a real session.
   if (isSupabaseConfigured && !isLoading && !user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" search={{ redirect: "/organizer" }} />;
   }
 
   if (isSupabaseConfigured && user && !isProfileLoading && profile && !profile.organization_id) {

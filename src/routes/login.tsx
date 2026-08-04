@@ -1,12 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Leaf, Loader2 } from "lucide-react";
+import { z } from "zod";
 import { useAuth } from "../hooks/use-auth";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 
+const loginSearchSchema = z.object({
+  redirect: z.string().optional(),
+});
+
 export const Route = createFileRoute("/login")({
+  validateSearch: loginSearchSchema,
   component: LoginPage,
 });
 
@@ -19,6 +25,7 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const { signInWithPassword, signUpWithPassword } = useAuth();
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +44,7 @@ function LoginPage() {
       return;
     }
 
-    navigate({ to: "/organizer" });
+    navigate({ to: redirect || "/organizer" });
   }
 
   return (
