@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Search, Loader2 } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
 import {
   Table,
   TableBody,
@@ -11,6 +13,13 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "../../../components/ui/sheet";
+import {
   useAllOrganizations,
   useToggleOrganizationActive,
 } from "../../../hooks/use-platform-admin-data";
@@ -19,9 +28,31 @@ export const Route = createFileRoute("/admin/_layout/organizations")({
   component: AdminOrganizationsPage,
 });
 
+const PLAN_TABS = ["all", "trial", "growth", "enterprise"] as const;
+
+function planLabel(plan: string) {
+  if (plan === "trial") return "Trial";
+  if (plan === "growth") return "Growth";
+  if (plan === "enterprise") return "Enterprise";
+  return plan;
+}
+
 function AdminOrganizationsPage() {
   const { data: organizations, isLoading } = useAllOrganizations();
   const toggleActive = useToggleOrganizationActive();
+  const [search, setSearch] = useState("");
+  const [plan, setPlan] = useState<(typeof PLAN_TABS)[number]>("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    return (organizations ?? []).filter((org) => {
+      const matchesPlan = plan === "all" || org.subscription_plan === plan;
+      const matchesSearch = org.name.toLowerCase().includes(search.toLowerCase());
+      return matchesPlan && matchesSearch;
+    });
+  }, [organizations, plan, search]);
+
+  const selected = (organizations ?? []).find((o) => o.id === selectedId) ?? null;
 
   return (
     <div>
@@ -35,14 +66,43 @@ function AdminOrganizationsPage() {
         </p>
       </div>
 
+      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2.5">
+        <div className="relative min-w-[220px] max-w-xs flex-1">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search organizations…"
+            className="border-border bg-card pl-8 text-[13px]"
+          />
+        </div>
+        <div className="flex gap-1 rounded-lg bg-secondary p-1">
+          {PLAN_TABS.map((p) => (
+            <button
+              key={p}
+              onClick={() => setPlan(p)}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
+                plan === p
+                  ? "bg-card text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {p === "all" ? "All" : planLabel(p)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="rounded-xl border border-border bg-card p-1.5">
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 p-8 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading…
           </div>
-        ) : (organizations ?? []).length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">No organizations yet.</p>
+        ) : filtered.length === 0 ? (
+          <p className="p-8 text-center text-sm text-muted-foreground">
+            No organizations match this view.
+          </p>
         ) : (
           <Table>
             <TableHeader>
@@ -58,15 +118,19 @@ function AdminOrganizationsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {organizations!.map((org) => (
-                <TableRow key={org.id}>
+              {filtered.map((org) => (
+                <TableRow
+                  key={org.id}
+                  className="cursor-pointer hover:bg-plum-soft/50"
+                  onClick={() => setSelectedId(org.id)}
+                >
                   <TableCell className="font-medium text-foreground">{org.name}</TableCell>
                   <TableCell className="text-muted-foreground">{org.country ?? "—"}</TableCell>
                   <TableCell className="font-mono text-muted-foreground">
                     {org.default_currency}
                   </TableCell>
-                  <TableCell className="capitalize text-muted-foreground">
-                    {org.subscription_plan}
+                  <TableCell className="text-muted-foreground">
+                    {planLabel(org.subscription_plan)}
                   </TableCell>
                   <TableCell className="font-mono text-muted-foreground">
                     {org.marketCount}
@@ -84,9 +148,10 @@ function AdminOrganizationsPage() {
                       size="sm"
                       variant="ghost"
                       className={org.is_active ? "text-destructive hover:text-destructive" : ""}
-                      onClick={() =>
-                        toggleActive.mutate({ organizationId: org.id, isActive: !org.is_active })
-                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleActive.mutate({ organizationId: org.id, isActive: !org.is_active });
+                      }}
                     >
                       {org.is_active ? "Suspend" : "Reactivate"}
                     </Button>
@@ -97,6 +162,66 @@ function AdminOrganizationsPage() {
           </Table>
         )}
       </div>
+
+      <Sheet open={Boolean(selected)} onOpenChange={(open) => !open && setSelectedId(null)}>
+        <SheetContent className="w-full max-w-md overflow-y-auto bg-background">
+          {selected && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="font-[family-name:var(--font-display)] text-xl">
+                  {selected.name}
+                </SheetTitle>
+                <SheetDescription>
+                  {planLabel(selected.subscription_plan)} plan ·{" "}
+                  {selected.country ?? "Country not set"}
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="mt-2 space-y-0 px-4">
+                <div className="flex justify-between border-b border-border py-2.5 text-[13px]">
+                  <span className="text-muted-foreground">Currency</span>
+                  <span className="font-mono font-semibold text-foreground">
+                    {selected.default_currency}
+                  </span>
+                </div>
+                <div className="flex justify-between border-b border-border py-2.5 text-[13px]">
+                  <span className="text-muted-foreground">Markets</span>
+                  <span className="font-semibold text-foreground">{selected.marketCount}</span>
+                </div>
+                <div className="flex justify-between border-b border-border py-2.5 text-[13px]">
+                  <span className="text-muted-foreground">Vendors</span>
+                  <span className="font-semibold text-foreground">{selected.vendorCount}</span>
+                </div>
+                <div className="flex justify-between border-b border-border py-2.5 text-[13px]">
+                  <span className="text-muted-foreground">Created</span>
+                  <span className="font-semibold text-foreground">
+                    {new Date(selected.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2.5 text-[13px]">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge variant={selected.is_active ? "default" : "secondary"}>
+                    {selected.is_active ? "Active" : "Suspended"}
+                  </Badge>
+                </div>
+
+                <Button
+                  className="mt-5 w-full"
+                  variant={selected.is_active ? "outline" : "default"}
+                  onClick={() =>
+                    toggleActive.mutate({
+                      organizationId: selected.id,
+                      isActive: !selected.is_active,
+                    })
+                  }
+                >
+                  {selected.is_active ? "Suspend organization" : "Reactivate organization"}
+                </Button>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

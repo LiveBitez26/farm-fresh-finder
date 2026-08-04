@@ -10,12 +10,16 @@ export function usePlatformStats() {
   return useQuery({
     queryKey: ["platform_stats"],
     queryFn: async () => {
-      const [organizations, vendors, markets, profiles, orders] = await Promise.all([
+      const [organizations, vendors, markets, profiles, orders, subscriptions] = await Promise.all([
         supabase.from("organizations").select("id", { count: "exact", head: true }),
         supabase.from("vendors").select("id", { count: "exact", head: true }),
         supabase.from("markets").select("id", { count: "exact", head: true }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("orders").select("id", { count: "exact", head: true }),
+        supabase
+          .from("subscriptions")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active"),
       ]);
       return {
         organizations: organizations.count ?? 0,
@@ -23,7 +27,77 @@ export function usePlatformStats() {
         markets: markets.count ?? 0,
         profiles: profiles.count ?? 0,
         orders: orders.count ?? 0,
+        activeSubscriptions: subscriptions.count ?? 0,
       };
+    },
+  });
+}
+
+/** Organizations with no vendors or no markets yet — a real, honest
+ * substitute for a fabricated "needs attention" list, since there's no
+ * billing/trial data yet to flag instead. */
+export function useOrganizationsNeedingAttention() {
+  const { data: organizations } = useAllOrganizations();
+  return (organizations ?? []).filter((o) => o.vendorCount === 0 || o.marketCount === 0);
+}
+
+/** Most recently created organizations, for a real "recent activity"
+ * feed on the admin Overview page. */
+export function useRecentOrganizations(limit = 6) {
+  return useQuery({
+    queryKey: ["recent_organizations", limit],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("id, name, created_at")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+/** New organizations per month, last 6 months — a real substitute for
+ * a fabricated MRR chart, since there's no billing data yet. */
+export function useNewOrganizationsByMonth() {
+  return useQuery({
+    queryKey: ["new_organizations_by_month"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("organizations").select("created_at");
+      if (error) throw error;
+
+      const now = new Date();
+      const months: { label: string; count: number }[] = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({ label: d.toLocaleDateString(undefined, { month: "short" }), count: 0 });
+      }
+      for (const row of data ?? []) {
+        const created = new Date(row.created_at);
+        const monthsAgo =
+          (now.getFullYear() - created.getFullYear()) * 12 + (now.getMonth() - created.getMonth());
+        if (monthsAgo >= 0 && monthsAgo <= 5) {
+          months[5 - monthsAgo].count += 1;
+        }
+      }
+      return months;
+    },
+  });
+}
+
+/** Real distribution of organizations across subscription plans. */
+export function usePlanDistribution() {
+  return useQuery({
+    queryKey: ["plan_distribution"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("organizations").select("subscription_plan");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of data ?? []) {
+        counts[row.subscription_plan] = (counts[row.subscription_plan] ?? 0) + 1;
+      }
+      return counts;
     },
   });
 }

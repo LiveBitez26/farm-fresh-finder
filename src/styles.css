@@ -51,6 +51,8 @@
   --color-clay-soft: var(--clay-soft, var(--secondary));
   --color-wheat: var(--wheat, var(--secondary));
   --color-danger-soft: var(--danger-soft, var(--destructive));
+  --color-plum: var(--plum, var(--primary));
+  --color-plum-soft: var(--plum-soft, var(--secondary));
 }
 
 /* -------------------------------------------------------------------
@@ -93,6 +95,52 @@
   --sidebar-accent-foreground: oklch(0.18 0.03 155); /* forest-deep */
   --sidebar-primary: oklch(0.84 0.08 90);
   --sidebar-primary-foreground: oklch(0.18 0.03 155);
+  --sidebar-ring: oklch(0.84 0.08 90);
+}
+
+/* Platform Admin theme — same paper/forest palette as the organizer
+ * console, but a deep plum-black sidebar to visually separate the
+ * "platform" tier (all organizations) from a single org's own console.
+ * Also swaps --primary/--accent to a plum tone for platform-scoped
+ * buttons and badges. */
+.admin-theme {
+  --background: oklch(0.955 0.02 95);
+  --foreground: oklch(0.27 0.015 130);
+  --card: oklch(0.975 0.015 90);
+  --card-foreground: oklch(0.27 0.015 130);
+  --popover: oklch(0.975 0.015 90);
+  --popover-foreground: oklch(0.27 0.015 130);
+  --primary: oklch(0.28 0.06 305); /* deep plum */
+  --primary-foreground: oklch(0.97 0.01 90);
+  --secondary: oklch(0.9 0.03 95);
+  --secondary-foreground: oklch(0.27 0.015 130);
+  --muted: oklch(0.93 0.02 95);
+  --muted-foreground: oklch(0.45 0.02 130);
+  --accent: oklch(0.58 0.08 45); /* clay */
+  --accent-foreground: oklch(0.97 0.01 90);
+  --destructive: oklch(0.5 0.13 25);
+  --destructive-foreground: oklch(0.97 0.01 90);
+  --border: oklch(0.27 0.015 130 / 0.13);
+  --input: oklch(0.27 0.015 130 / 0.22);
+  --ring: oklch(0.28 0.06 305);
+
+  --moss: oklch(0.55 0.08 145);
+  --moss-soft: oklch(0.92 0.03 145);
+  --clay: oklch(0.58 0.08 45);
+  --clay-soft: oklch(0.9 0.04 60);
+  --wheat: oklch(0.84 0.08 90);
+  --danger-soft: oklch(0.88 0.05 25);
+  --plum: oklch(0.28 0.06 305);
+  --plum-soft: oklch(0.92 0.025 305);
+
+  /* Deep plum-black, distinct from the organizer's forest-green sidebar */
+  --sidebar: oklch(0.19 0.025 300);
+  --sidebar-foreground: oklch(0.93 0.01 300);
+  --sidebar-border: oklch(1 0 0 / 0.1);
+  --sidebar-accent: oklch(0.84 0.08 90); /* wheat, same active-state accent */
+  --sidebar-accent-foreground: oklch(0.19 0.025 300);
+  --sidebar-primary: oklch(0.84 0.08 90);
+  --sidebar-primary-foreground: oklch(0.19 0.025 300);
   --sidebar-ring: oklch(0.84 0.08 90);
 }
 

@@ -19,7 +19,10 @@ import { Route as OrganizerLayoutRouteImport } from './routes/organizer/_layout'
 import { Route as StoreVendorIdRouteImport } from './routes/store.$vendorId'
 import { Route as VendorLayoutRouteImport } from './routes/vendor/_layout'
 import { Route as AdminLayoutIndexRouteImport } from './routes/admin/_layout/index'
+import { Route as AdminLayoutAnalyticsRouteImport } from './routes/admin/_layout/analytics'
 import { Route as AdminLayoutOrganizationsRouteImport } from './routes/admin/_layout/organizations'
+import { Route as AdminLayoutSettingsRouteImport } from './routes/admin/_layout/settings'
+import { Route as AdminLayoutSubscriptionsRouteImport } from './routes/admin/_layout/subscriptions'
 import { Route as OrganizerLayoutIndexRouteImport } from './routes/organizer/_layout/index'
 import { Route as OrganizerLayoutAnalyticsRouteImport } from './routes/organizer/_layout/analytics'
 import { Route as OrganizerLayoutCommunicationsRouteImport } from './routes/organizer/_layout/communications'
@@ -85,10 +88,26 @@ const AdminLayoutIndexRoute = AdminLayoutIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminLayoutRoute,
 } as any)
+const AdminLayoutAnalyticsRoute = AdminLayoutAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminLayoutRoute,
+} as any)
 const AdminLayoutOrganizationsRoute =
   AdminLayoutOrganizationsRouteImport.update({
     id: '/organizations',
     path: '/organizations',
+    getParentRoute: () => AdminLayoutRoute,
+  } as any)
+const AdminLayoutSettingsRoute = AdminLayoutSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminLayoutRoute,
+} as any)
+const AdminLayoutSubscriptionsRoute =
+  AdminLayoutSubscriptionsRouteImport.update({
+    id: '/subscriptions',
+    path: '/subscriptions',
     getParentRoute: () => AdminLayoutRoute,
   } as any)
 const OrganizerLayoutIndexRoute = OrganizerLayoutIndexRouteImport.update({
@@ -175,7 +194,10 @@ export interface FileRoutesByFullPath {
   '/organizer': typeof OrganizerLayoutRouteWithChildren
   '/store/$vendorId': typeof StoreVendorIdRoute
   '/vendor': typeof VendorLayoutRouteWithChildren
+  '/admin/analytics': typeof AdminLayoutAnalyticsRoute
   '/admin/organizations': typeof AdminLayoutOrganizationsRoute
+  '/admin/settings': typeof AdminLayoutSettingsRoute
+  '/admin/subscriptions': typeof AdminLayoutSubscriptionsRoute
   '/organizer/analytics': typeof OrganizerLayoutAnalyticsRoute
   '/organizer/communications': typeof OrganizerLayoutCommunicationsRoute
   '/organizer/compliance': typeof OrganizerLayoutComplianceRoute
@@ -199,7 +221,10 @@ export interface FileRoutesByTo {
   '/apply/$slug': typeof ApplySlugRoute
   '/market/$slug': typeof MarketSlugRoute
   '/store/$vendorId': typeof StoreVendorIdRoute
+  '/admin/analytics': typeof AdminLayoutAnalyticsRoute
   '/admin/organizations': typeof AdminLayoutOrganizationsRoute
+  '/admin/settings': typeof AdminLayoutSettingsRoute
+  '/admin/subscriptions': typeof AdminLayoutSubscriptionsRoute
   '/organizer/analytics': typeof OrganizerLayoutAnalyticsRoute
   '/organizer/communications': typeof OrganizerLayoutCommunicationsRoute
   '/organizer/compliance': typeof OrganizerLayoutComplianceRoute
@@ -227,7 +252,10 @@ export interface FileRoutesById {
   '/organizer/_layout': typeof OrganizerLayoutRouteWithChildren
   '/store/$vendorId': typeof StoreVendorIdRoute
   '/vendor/_layout': typeof VendorLayoutRouteWithChildren
+  '/admin/_layout/analytics': typeof AdminLayoutAnalyticsRoute
   '/admin/_layout/organizations': typeof AdminLayoutOrganizationsRoute
+  '/admin/_layout/settings': typeof AdminLayoutSettingsRoute
+  '/admin/_layout/subscriptions': typeof AdminLayoutSubscriptionsRoute
   '/organizer/_layout/analytics': typeof OrganizerLayoutAnalyticsRoute
   '/organizer/_layout/communications': typeof OrganizerLayoutCommunicationsRoute
   '/organizer/_layout/compliance': typeof OrganizerLayoutComplianceRoute
@@ -256,7 +284,10 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/store/$vendorId'
     | '/vendor'
+    | '/admin/analytics'
     | '/admin/organizations'
+    | '/admin/settings'
+    | '/admin/subscriptions'
     | '/organizer/analytics'
     | '/organizer/communications'
     | '/organizer/compliance'
@@ -280,7 +311,10 @@ export interface FileRouteTypes {
     | '/apply/$slug'
     | '/market/$slug'
     | '/store/$vendorId'
+    | '/admin/analytics'
     | '/admin/organizations'
+    | '/admin/settings'
+    | '/admin/subscriptions'
     | '/organizer/analytics'
     | '/organizer/communications'
     | '/organizer/compliance'
@@ -307,7 +341,10 @@ export interface FileRouteTypes {
     | '/organizer/_layout'
     | '/store/$vendorId'
     | '/vendor/_layout'
+    | '/admin/_layout/analytics'
     | '/admin/_layout/organizations'
+    | '/admin/_layout/settings'
+    | '/admin/_layout/subscriptions'
     | '/organizer/_layout/analytics'
     | '/organizer/_layout/communications'
     | '/organizer/_layout/compliance'
@@ -410,11 +447,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutIndexRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
+    '/admin/_layout/analytics': {
+      id: '/admin/_layout/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminLayoutAnalyticsRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
     '/admin/_layout/organizations': {
       id: '/admin/_layout/organizations'
       path: '/organizations'
       fullPath: '/admin/organizations'
       preLoaderRoute: typeof AdminLayoutOrganizationsRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
+    '/admin/_layout/settings': {
+      id: '/admin/_layout/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminLayoutSettingsRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
+    '/admin/_layout/subscriptions': {
+      id: '/admin/_layout/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/admin/subscriptions'
+      preLoaderRoute: typeof AdminLayoutSubscriptionsRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
     '/organizer/_layout/': {
@@ -519,12 +577,18 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminLayoutRouteChildren {
+  AdminLayoutAnalyticsRoute: typeof AdminLayoutAnalyticsRoute
   AdminLayoutOrganizationsRoute: typeof AdminLayoutOrganizationsRoute
+  AdminLayoutSettingsRoute: typeof AdminLayoutSettingsRoute
+  AdminLayoutSubscriptionsRoute: typeof AdminLayoutSubscriptionsRoute
   AdminLayoutIndexRoute: typeof AdminLayoutIndexRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
+  AdminLayoutAnalyticsRoute: AdminLayoutAnalyticsRoute,
   AdminLayoutOrganizationsRoute: AdminLayoutOrganizationsRoute,
+  AdminLayoutSettingsRoute: AdminLayoutSettingsRoute,
+  AdminLayoutSubscriptionsRoute: AdminLayoutSubscriptionsRoute,
   AdminLayoutIndexRoute: AdminLayoutIndexRoute,
 }
 
